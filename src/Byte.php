@@ -98,20 +98,22 @@ final class Byte implements \Stringable
         if (str_ends_with($humanized, 'B') && is_numeric($bytes = substr($humanized, 0, -1))) {
             return $bytes;
         }
+        
+        $isNumeric = is_numeric($bytes = substr($humanized, 0, -2));
 
-        if (str_ends_with($humanized, 'kB') && is_numeric($bytes = substr($humanized, 0, -2))) {
+        if (str_ends_with($humanized, 'kB') && $isNumeric) {
             return $bytes * 1024;
         }
 
-        if (str_ends_with($humanized, 'MB') && is_numeric($bytes = substr($humanized, 0, -2))) {
+        if (str_ends_with($humanized, 'MB') && $isNumeric) {
             return $bytes * pow(1024, 2);
         }
 
-        if (str_ends_with($humanized, 'GB') && is_numeric($bytes = substr($humanized, 0, -2))) {
+        if (str_ends_with($humanized, 'GB') && $isNumeric) {
             return $bytes * pow(1024, 3);
         }
 
-        if (str_ends_with($humanized, 'TB') && is_numeric($bytes = substr($humanized, 0, -2))) {
+        if (str_ends_with($humanized, 'TB') && $isNumeric) {
             return $bytes * pow(1024, 4);
         }
 
