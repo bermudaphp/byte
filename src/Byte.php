@@ -91,6 +91,7 @@ final class Byte implements \Stringable
     /**
      * @param string $humanized
      * @return int
+     * @throws \InvalidArgumentException
      */
     public static function parse(string $humanized): int
     {
