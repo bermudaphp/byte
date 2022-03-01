@@ -1,1 +1,4 @@
-# utils-byte
+# Install
+```bash
+composer require utils-byte
+````
