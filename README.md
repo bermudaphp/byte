@@ -1,4 +1,4 @@
 # Install
 ```bash
-composer require utils-byte
+composer require bermudaphp/utils-byte
 ````
