@@ -86,7 +86,7 @@ final class Byte implements \Stringable
      */
     public function lessThan(int|string $size): bool
     {
-        return $this->value > (is_string($size) ? self::parse($size) : $size);
+        return $this->value < (is_string($size) ? self::parse($size) : $size);
     }
 
     /**
@@ -95,7 +95,7 @@ final class Byte implements \Stringable
      */
     public function greaterThan(int|string $size): bool
     {
-        return $this->value < (is_string($size) ? self::parse($size) : $size);
+        return $this->value > (is_string($size) ? self::parse($size) : $size);
     }
 
     /**
