@@ -5,9 +5,11 @@ namespace Bermuda\Utils;
 final class Byte implements \Stringable
 {
     public readonly int $value;
+    
     public const COMPARE_LT = -1;
     public const COMPARE_EQ = 0;
     public const COMPARE_GT = 1;
+    
     public function __construct(int|string $value)
     {
         if (is_string($value)) {
@@ -51,6 +53,23 @@ final class Byte implements \Stringable
 
         return self::COMPARE_LT;
     }
+    
+    public function increment(int|string $size): self
+    {
+        $this->value += self::parse($size);
+        return $this;
+    }
+    
+    public function decrement(int|string $size): self
+    {
+        if (($size = self::parse($size)) > $this->value) {
+            throw new \LogicException('[ $size ] can not be greater than '. $this->value);
+        }
+        
+        $this->value -= self::parse($size);
+        return $this;
+    }
+
 
     /**
      * @param int|string $size
@@ -95,6 +114,10 @@ final class Byte implements \Stringable
      */
     public static function parse(string $humanized): int
     {
+        if (is_numeric($humanized)) {
+            return $humanized;
+        }
+        
         if (str_ends_with($humanized, 'B') && is_numeric($bytes = substr($humanized, 0, -1))) {
             return $bytes;
         }
