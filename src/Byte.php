@@ -66,7 +66,7 @@ final class Byte implements \Stringable
             throw new \LogicException('[ $size ] can not be greater than '. $this->value);
         }
         
-        $this->value -= self::parse($size);
+        $this->value -= $size;
         return $this;
     }
 
