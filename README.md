@@ -10,6 +10,7 @@ $byte = Byte::parse('100 mb');
 
 echo $byte->to('gb', 2); // 0.1 GB
 echo $byte->toString(); // 100 MB
+echo $byte->value; // 104857600
 
 $operand = 101*1024*1024;
 
