@@ -239,8 +239,8 @@ final class Byte implements \Stringable
     {
         $exponent = 8;
         $units = ['kB','MB','GB','TB', 'PB', 'EB', 'ZB', 'YB'];
-        while ($exponent--) {
-            if (($result = $bytes / pow(1000, $exponent + 1)) > 1) {
+        while ($exponent > 0) {
+            if (($result = $bytes / pow(1000, $exponent--)) >= 1) {
                 if ($precision) $result = round($result, $precision);
                 return "$result$delim$units[$exponent]";
             }
