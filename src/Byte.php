@@ -21,7 +21,7 @@ final class Byte implements \Stringable
      */
     public static function kb(int $value): self
     {
-        return new self($value*pow(1024, 1));
+        return new self($value*pow(1000, 1));
     }
 
     /**
@@ -30,7 +30,7 @@ final class Byte implements \Stringable
      */
     public static function mb(int $value): self
     {
-        return new self($value*pow(1024, 2));
+        return new self($value*pow(1000, 2));
     }
 
     /**
@@ -39,7 +39,7 @@ final class Byte implements \Stringable
      */
     public static function gb(int $value): self
     {
-        return new self($value*pow(1024, 3));
+        return new self($value*pow(1000, 3));
     }
 
     /**
@@ -48,16 +48,16 @@ final class Byte implements \Stringable
      */
     public static function tb(int $value): self
     {
-        return new self($value*pow(1024, 4));
+        return new self($value*pow(1000, 4));
     }
-    
+
     /**
      * @param int $value
      * @return static
      */
     public static function pb(int $value): self
     {
-        return new self($value*pow(1024, 5));
+        return new self($value*pow(1000, 5));
     }
 
     /**
@@ -66,7 +66,7 @@ final class Byte implements \Stringable
      */
     public static function eb(int $value): self
     {
-        return new self($value*pow(1024, 6));
+        return new self($value*pow(1000, 6));
     }
 
     /**
@@ -75,7 +75,7 @@ final class Byte implements \Stringable
      */
     public static function zb(int $value): self
     {
-        return new self($value*pow(1024, 7));
+        return new self($value*pow(1000, 7));
     }
 
     /**
@@ -84,7 +84,7 @@ final class Byte implements \Stringable
      */
     public static function yb(int $value): self
     {
-        return new self($value*pow(1024, 8));
+        return new self($value*pow(1000, 8));
     }
 
     /**
@@ -106,14 +106,14 @@ final class Byte implements \Stringable
     public function to(string $units = 'b', int $precision = null, string $delim = ' '): string
     {
         $segments = match (strtolower($units)) {
-            'kb' => [$this->value / 1024, 'kB'],
-            'mb' => [$this->value / pow(1024, 2),  'MB'],
-            'gb' => [$this->value / pow(1024, 3), 'GB'],
-            'tb' => [$this->value / pow(1024, 4), 'TB'],
-            'pb' => [$this->value / pow(1024, 5), 'PB'],
-            'eb' => [$this->value / pow(1024, 6), 'EB'],
-            'zb' => [$this->value / pow(1024, 7), 'ZB'],
-            'yb' => [$this->value / pow(1024, 8), 'YB'],
+            'kb' => [$this->value / 1000, 'kB'],
+            'mb' => [$this->value / pow(1000, 2),  'MB'],
+            'gb' => [$this->value / pow(1000, 3), 'GB'],
+            'tb' => [$this->value / pow(1000, 4), 'TB'],
+            'pb' => [$this->value / pow(1000, 5), 'PB'],
+            'eb' => [$this->value / pow(1000, 6), 'EB'],
+            'zb' => [$this->value / pow(1000, 7), 'ZB'],
+            'yb' => [$this->value / pow(1000, 8), 'YB'],
             default => [$this->value, 'B']
         };
 
@@ -240,7 +240,7 @@ final class Byte implements \Stringable
         $exponent = 8;
         $units = ['kB','MB','GB','TB', 'PB', 'EB', 'ZB', 'YB'];
         while ($exponent--) {
-            if (($result = $bytes / pow(1024, $exponent + 1)) > 1) {
+            if (($result = $bytes / pow(1000, $exponent + 1)) > 1) {
                 if ($precision) $result = round($result, $precision);
                 return "$result$delim$units[$exponent]";
             }
@@ -268,14 +268,14 @@ final class Byte implements \Stringable
 
         $isNumeric = is_numeric($bytes = trim(substr($string, 0, -2)));
 
-        if (($n = substr($string, -2, 2)) == 'kb' && $isNumeric) return $bytes * 1024;
-        if ($n == 'mb' && $isNumeric) return $bytes * pow(1024, 2);
-        if ($n == 'gb' && $isNumeric) return $bytes * pow(1024, 3);
-        if ($n == 'tb' && $isNumeric) return $bytes * pow(1024, 4);
-        if ($n == 'pb' && $isNumeric) return $bytes * pow(1024, 5);
-        if ($n == 'eb' && $isNumeric) return $bytes * pow(1024, 6);
-        if ($n == 'zb' && $isNumeric) return $bytes * pow(1024, 7);
-        if ($n == 'yb' && $isNumeric) return $bytes * pow(1024, 8);
+        if (($n = substr($string, -2, 2)) == 'kb' && $isNumeric) return $bytes * 1000;
+        if ($n == 'mb' && $isNumeric) return $bytes * pow(1000, 2);
+        if ($n == 'gb' && $isNumeric) return $bytes * pow(1000, 3);
+        if ($n == 'tb' && $isNumeric) return $bytes * pow(1000, 4);
+        if ($n == 'pb' && $isNumeric) return $bytes * pow(1000, 5);
+        if ($n == 'eb' && $isNumeric) return $bytes * pow(1000, 6);
+        if ($n == 'zb' && $isNumeric) return $bytes * pow(1000, 7);
+        if ($n == 'yb' && $isNumeric) return $bytes * pow(1000, 8);
 
         throw new \InvalidArgumentException('Failed to parse string');
     }
