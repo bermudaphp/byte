@@ -31,55 +31,67 @@ final class Byte implements \Stringable
         return self::humanize($this->value);
     }
 
-    public function to(string $units = 'b', int $precision = null): string
+    public function to(string $units = 'b', int $precision = null, string $delim = ' '): string
     {
+        $segments = match (strtolower($units)) {
+            'kb' => [$this->value / 1024, 'kB'],
+            'mb' => [$this->value / pow(1024, 2),  'MB'],
+            'gb' => [$this->value / pow(1024, 3), 'GB'],
+            'tb' => [$this->value / pow(1024, 4), 'TB'],
+            'pb' => [$this->value / pow(1024, 5), 'PB'],
+            'eb' => [$this->value / pow(1024, 6), 'EB'],
+            'zb' => [$this->value / pow(1024, 7), 'ZB'],
+            'yb' => [$this->value / pow(1024, 7), 'YB'],
+            default => [$this->value, 'B']
+        };
+
         if ($precision) {
-            return match (strtolower($units)) {
-                'kb' => round($this->value / 1024, $precision) . ' kB',
-                'mb' => round($this->value / pow(1024, 2), $precision) . ' MB',
-                'gb' => round($this->value / pow(1024, 3), $precision) . ' GB',
-                'tb' => round($this->value / pow(1024, 4), $precision) . ' TB',
-                default => $this->value . ' B'
-            };
+            return round($segments[0], $precision) . "{$delim}{$segments[1]}";
         }
 
-        return match (strtolower($units)) {
-            'kb' => $this->value / 1024 . ' kB',
-            'mb' => $this->value / pow(1024, 2) . ' MB',
-            'gb' => $this->value / pow(1024, 3) . ' GB',
-            'tb' => $this->value / pow(1024, 4) . ' TB',
-            default => $this->value . ' B'
-        };
+        return implode($delim, $segments);
     }
 
-    public function toKb(int $precision = null): string
+    public function toKb(int $precision = null, string $delim = ' '): string
     {
-        return $this->to('kB', $precision);
+        return $this->to('kB', $precision, $delim);
     }
 
-    public function toMb(int $precision = null): string
+    public function toMb(int $precision = null, string $delim = ' '): string
     {
-        return $this->to('mb', $precision);
+        return $this->to('mb', $precision, $delim);
     }
 
-    public function toGb(int $precision = null): string
+    public function toGb(int $precision = null, string $delim = ' '): string
     {
-        return $this->to('gb', $precision);
+        return $this->to('gb', $precision, $delim);
     }
 
-    public function toTb(int $precision = null): string
+    public function toTb(int $precision = null, string $delim = ' '): string
     {
-        return $this->to('tb', $precision);
+        return $this->to('tb', $precision, $delim);
     }
 
-    /**
-     * @return int
-     */
-    public function toInt(): int
+    public function toPb(int $precision = null, string $delim = ' '): string
     {
-        return $this->value;
+        return $this->to('pb', $precision, $delim);
     }
 
+    public function toEb(int $precision = null, string $delim = ' '): string
+    {
+        return $this->to('eb', $precision, $delim);
+    }
+
+    public function toZb(int $precision = null, string $delim = ' '): string
+    {
+        return $this->to('zb', $precision, $delim);
+    }
+
+    public function toYb(int $precision = null, string $delim = ' '): string
+    {
+        return $this->to('yb', $precision, $delim);
+    }
+    
     /**
      * @param Byte|int|string $operand
      * Returns -1 if $this->value is less than $operand.
@@ -168,7 +180,7 @@ final class Byte implements \Stringable
 
         if (
             str_ends_with($string = strtolower($string), 'b')
-            && is_numeric($bytes = substr($string, 0, -1))
+            && is_numeric($bytes = trim(substr($string, 0, -1)))
         ) {
             return $bytes;
         }
@@ -179,6 +191,10 @@ final class Byte implements \Stringable
         if ($n == 'mb' && $isNumeric) return $bytes * pow(1024, 2);
         if ($n == 'gb' && $isNumeric) return $bytes * pow(1024, 3);
         if ($n == 'tb' && $isNumeric) return $bytes * pow(1024, 4);
+        if ($n == 'pb' && $isNumeric) return $bytes * pow(1024, 5);
+        if ($n == 'eb' && $isNumeric) return $bytes * pow(1024, 6);
+        if ($n == 'zb' && $isNumeric) return $bytes * pow(1024, 7);
+        if ($n == 'yb' && $isNumeric) return $bytes * pow(1024, 8);
 
         throw new \InvalidArgumentException('Failed to parse string');
     }
