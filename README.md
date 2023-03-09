@@ -10,7 +10,7 @@ echo $byte->to('gb', 2); // 0.1 GB or $byte->toGb(2);
 echo $byte->toString(); // 100 MB
 echo $byte->value; // 104857600
 
-$operand = 101*pow(1024, 2);
+$operand = 101*1024**2;
 
 // Returns -1 if $byte->value is less than $operand. Returns 1 if $byte->value is greater than $operand. Returns 0 if $byte->value and $operand are equal
 $byte->compare($operand) // -1
