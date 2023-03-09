@@ -4,13 +4,13 @@ namespace Bermuda\Stdlib;
 
 final class Byte implements \Stringable
 {
-    public readonly int $value;
+    public readonly int|float $value;
     
     public const COMPARE_LT = -1;
     public const COMPARE_EQ = 0;
     public const COMPARE_GT = 1;
     
-    public function __construct(int|string $value)
+    public function __construct(int|float|string $value)
     {
         $this->value = self::parse($value);
     }
@@ -91,15 +91,15 @@ final class Byte implements \Stringable
     {
         return $this->to('yb', $precision, $delim);
     }
-    
+
     /**
-     * @param Byte|int|string $operand
+     * @param Byte|int|float|string $operand
      * Returns -1 if $this->value is less than $operand.
      * Returns 1 if $this->value is greater than $operand.
      * Returns 0 if $this->value and $operand are equal
      * @return int
      */
-    public function compare(self|int|string $operand): int
+    public function compare(self|int|float|string $operand): int
     {
         $operand = self::parse($operand);
 
@@ -110,19 +110,19 @@ final class Byte implements \Stringable
     }
 
     /**
-     * @param Byte|int|string $value
+     * @param Byte|int|float|string $value
      * @return $this
      */
-    public function increment(self|int|string $value): self
+    public function increment(self|int|float|string $value): self
     {
         return new self($this->value + self::parse($value));
     }
 
     /**
-     * @param Byte|int|string $value
+     * @param Byte|int|float|string $value
      * @return $this
      */
-    public function decrement(self|int|string $value): self
+    public function decrement(self|int|float|string $value): self
     {
         if (($value = self::parse($value)) > $this->value) {
             throw new \LogicException('[$value] can not be greater than '. $this->value);
@@ -133,39 +133,48 @@ final class Byte implements \Stringable
 
 
     /**
-     * @param Byte|int|string $operand
+     * @param Byte|int|float|string $operand
      * @return bool
      */
-    public function equalTo(self|int|string $operand): bool
+    public function equalTo(self|int|float|string $operand): bool
     {
         return self::parse($operand) == $this->value;
     }
 
     /**
-     * @param Byte|int|string $operand
+     * @param Byte|int|float|string $operand
      * @return bool
      */
-    public function lessThan(self|int|string $operand): bool
+    public function lessThan(self|int|float|string $operand): bool
     {
         return self::parse($operand) > $this->value;
     }
 
     /**
-     * @param int|string $operand
+     * @param int|float|string $operand
      * @return bool
      */
-    public function greaterThan(int|string $operand): bool
+    public function greaterThan(int|float|string $operand): bool
     {
         return $this->value > self::parse($operand);
     }
 
     /**
-     * @param int $bytes
+     * @param int|float $bytes
      * @return string
      */
-    public static function humanize(int $bytes): string
+    public static function humanize(int|float $bytes, int $precision = 2, string $delim = ' '): string
     {
-        return round($bytes / pow(1024, $i = floor(log($bytes, 1024))), [0,0,2,2,3][$i]).[' B',' kB',' MB',' GB',' TB'][$i];
+        $exponent = 8;
+        $metrics = ['kB','MB','GB','TB', 'PB', 'EB', 'ZB', 'YB'];
+        while ($exponent--) {
+            if (($result = $bytes / pow(1024, $exponent + 1)) > 1) {
+                if ($precision) $result = round($result, $precision);
+                return "$result$delim$metrics[$exponent]";
+            }
+        }
+
+        return "$bytes{$delim}B";
     }
 
     /**
@@ -173,28 +182,28 @@ final class Byte implements \Stringable
      * @return int
      * @throws \InvalidArgumentException
      */
-    public static function parse(self|string $string, bool $instantiate = false): int|Byte
+    public static function parse(self|string $string): int|float
     {
-        if (is_numeric($string)) return $instantiate ? new self($string) : $string;
-        if ($string instanceof self) return $instantiate ? clone $string : $string->value;
+        if (is_numeric($string)) return $string;
+        if ($string instanceof self) return $string->value;
 
         if (
             str_ends_with($string = strtolower($string), 'b')
             && is_numeric($bytes = trim(substr($string, 0, -1)))
         ) {
-            return $instantiate ? new self($bytes) : $bytes;
+            return $bytes;
         }
 
         $isNumeric = is_numeric($bytes = trim(substr($string, 0, -2)));
 
         if (($n = substr($string, -2, 2)) == 'kb' && $isNumeric) return $bytes * 1024;
-        if ($n == 'mb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 2)) : $bytes * pow(1024, 2);
-        if ($n == 'gb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 3)) : $bytes * pow(1024, 3);
-        if ($n == 'tb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 4)) : $bytes * pow(1024, 4);
-        if ($n == 'pb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 5)) : $bytes * pow(1024, 5);
-        if ($n == 'eb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 6)) : $bytes * pow(1024, 6);
-        if ($n == 'zb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 7)) : $bytes * pow(1024, 7);
-        if ($n == 'yb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 8)) : $bytes * pow(1024, 8);
+        if ($n == 'mb' && $isNumeric) return $bytes * pow(1024, 2);
+        if ($n == 'gb' && $isNumeric) return $bytes * pow(1024, 3);
+        if ($n == 'tb' && $isNumeric) return $bytes * pow(1024, 4);
+        if ($n == 'pb' && $isNumeric) return $bytes * pow(1024, 5);
+        if ($n == 'eb' && $isNumeric) return $bytes * pow(1024, 6);
+        if ($n == 'zb' && $isNumeric) return $bytes * pow(1024, 7);
+        if ($n == 'yb' && $isNumeric) return $bytes * pow(1024, 8);
 
         throw new \InvalidArgumentException('Failed to parse string');
     }
