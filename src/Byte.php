@@ -31,8 +31,18 @@ final class Byte implements \Stringable
         return self::humanize($this->value);
     }
 
-    public function to(string $units = 'b'): string
+    public function to(string $units = 'b', int $precision = null): string
     {
+        if ($precision) {
+            return match (strtolower($units)) {
+                'kb' => round($this->value / 1024, $precision) . ' kB',
+                'mb' => round($this->value / pow(1024, 2), $precision) . ' MB',
+                'gb' => round($this->value / pow(1024, 3), $precision) . ' GB',
+                'tb' => round($this->value / pow(1024, 4), $precision) . ' TB',
+                default => $this->value . ' B'
+            };
+        }
+
         return match (strtolower($units)) {
             'kb' => $this->value / 1024 . ' kB',
             'mb' => $this->value / pow(1024, 2) . ' MB',
@@ -42,24 +52,24 @@ final class Byte implements \Stringable
         };
     }
 
-    public function toKb(): string
+    public function toKb(int $precision = null): string
     {
-        return $this->to('kB');
+        return $this->to('kB', $precision);
     }
 
-    public function toMb(): string
+    public function toMb(int $precision = null): string
     {
-        return $this->to('mb');
+        return $this->to('mb', $precision);
     }
 
-    public function toGb(): string
+    public function toGb(int $precision = null): string
     {
-        return $this->to('gb');
+        return $this->to('gb', $precision);
     }
 
-    public function toTb(): string
+    public function toTb(int $precision = null): string
     {
-        return $this->to('tb');
+        return $this->to('tb', $precision);
     }
 
     /**
@@ -74,17 +84,12 @@ final class Byte implements \Stringable
      * @param int|string $size
      * @return int
      */
-    public function compare(int|string $size): int
+    public function compare(self|int|string $size): int
     {
         $size = self::parse($size);
 
-        if ($size == $this->value) {
-            return self::COMPARE_EQ;
-        }
-
-        if ($size > $this->value) {
-            return self::COMPARE_GT;
-        }
+        if ($size == $this->value) return self::COMPARE_EQ;
+        if ($size > $this->value) return self::COMPARE_GT;
 
         return self::COMPARE_LT;
     }
@@ -93,7 +98,7 @@ final class Byte implements \Stringable
      * @param int|string $size
      * @return $this
      */
-    public function increment(int|string $size): self
+    public function increment(self|int|string $size): self
     {
         return new self($this->value + self::parse($size));
     }
@@ -102,7 +107,7 @@ final class Byte implements \Stringable
      * @param int|string $size
      * @return $this
      */
-    public function decrement(int|string $size): self
+    public function decrement(self|int|string $size): self
     {
         if (($size = self::parse($size)) > $this->value) {
             throw new \LogicException('[ $size ] can not be greater than '. $this->value);
@@ -113,21 +118,21 @@ final class Byte implements \Stringable
 
 
     /**
-     * @param int|string $size
+     * @param Byte|int|string $size
      * @return bool
      */
-    public function equalTo(int|string $size): bool
+    public function equalTo(self|int|string $size): bool
     {
-        return (is_string($size) ? self::parse($size) : $size) == $this->value;
+        return self::parse($size) == $this->value;
     }
 
     /**
-     * @param int|string $size
+     * @param Byte|int|string $size
      * @return bool
      */
-    public function lessThan(int|string $size): bool
+    public function lessThan(self|int|string $size): bool
     {
-        return $this->value < (is_string($size) ? self::parse($size) : $size);
+        return self::parse($size) > $this->value;
     }
 
     /**
@@ -136,7 +141,7 @@ final class Byte implements \Stringable
      */
     public function greaterThan(int|string $size): bool
     {
-        return $this->value > (is_string($size) ? self::parse($size) : $size);
+        return $this->value > self::parse($size);
     }
 
     /**
@@ -149,23 +154,22 @@ final class Byte implements \Stringable
     }
 
     /**
-     * @param string $humanized
+     * @param string $string
      * @return int
      * @throws \InvalidArgumentException
      */
-    public static function parse(string $humanized): int
+    public static function parse(self|string $string): int
     {
-        if (is_numeric($humanized)) {
-            return $humanized;
-        }
+        if (is_numeric($string)) return $string;
+        if ($string instanceof self) return $string->value;
         
-        if (str_ends_with($humanized, 'B') && is_numeric($bytes = substr($humanized, 0, -1))) {
+        if (str_ends_with($string, 'B') && is_numeric($bytes = substr($string, 0, -1))) {
             return $bytes;
         }
 
-        $isNumeric = is_numeric($bytes = substr($humanized, 0, -2));
+        $isNumeric = is_numeric($bytes = substr($string, 0, -2));
 
-        if (($n = substr($humanized, -2, 2)) == 'kB' && $isNumeric) {
+        if (($n = substr($string, -2, 2)) == 'kB' && $isNumeric) {
             return $bytes * 1024;
         }
 
