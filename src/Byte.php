@@ -16,6 +16,78 @@ final class Byte implements \Stringable
     }
 
     /**
+     * @param int $value
+     * @return static
+     */
+    public static function kb(int $value): self
+    {
+        return new self($value*pow(1024, 1));
+    }
+
+    /**
+     * @param int $value
+     * @return static
+     */
+    public static function mb(int $value): self
+    {
+        return new self($value*pow(1024, 2));
+    }
+
+    /**
+     * @param int $value
+     * @return static
+     */
+    public static function gb(int $value): self
+    {
+        return new self($value*pow(1024, 3));
+    }
+
+    /**
+     * @param int $value
+     * @return static
+     */
+    public static function tb(int $value): self
+    {
+        return new self($value*pow(1024, 4));
+    }
+    
+    /**
+     * @param int $value
+     * @return static
+     */
+    public static function pb(int $value): self
+    {
+        return new self($value*pow(1024, 5));
+    }
+
+    /**
+     * @param int $value
+     * @return static
+     */
+    public static function eb(int $value): self
+    {
+        return new self($value*pow(1024, 6));
+    }
+
+    /**
+     * @param int $value
+     * @return static
+     */
+    public static function zb(int $value): self
+    {
+        return new self($value*pow(1024, 7));
+    }
+
+    /**
+     * @param int $value
+     * @return static
+     */
+    public static function yb(int $value): self
+    {
+        return new self($value*pow(1024, 8));
+    }
+
+    /**
      * @return string
      */
     public function __toString(): string
@@ -41,7 +113,7 @@ final class Byte implements \Stringable
             'pb' => [$this->value / pow(1024, 5), 'PB'],
             'eb' => [$this->value / pow(1024, 6), 'EB'],
             'zb' => [$this->value / pow(1024, 7), 'ZB'],
-            'yb' => [$this->value / pow(1024, 7), 'YB'],
+            'yb' => [$this->value / pow(1024, 8), 'YB'],
             default => [$this->value, 'B']
         };
 
@@ -166,11 +238,11 @@ final class Byte implements \Stringable
     public static function humanize(int|float $bytes, int $precision = 2, string $delim = ' '): string
     {
         $exponent = 8;
-        $metrics = ['kB','MB','GB','TB', 'PB', 'EB', 'ZB', 'YB'];
+        $units = ['kB','MB','GB','TB', 'PB', 'EB', 'ZB', 'YB'];
         while ($exponent--) {
             if (($result = $bytes / pow(1024, $exponent + 1)) > 1) {
                 if ($precision) $result = round($result, $precision);
-                return "$result$delim$metrics[$exponent]";
+                return "$result$delim$units[$exponent]";
             }
         }
 
