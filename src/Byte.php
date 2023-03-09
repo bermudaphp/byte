@@ -1,6 +1,6 @@
 <?php
 
-namespace Bermuda\Utils;
+namespace Bermuda\Stdlib;
 
 final class Byte implements \Stringable
 {
@@ -12,11 +12,7 @@ final class Byte implements \Stringable
     
     public function __construct(int|string $value)
     {
-        if (is_string($value)) {
-            $value = self::parse($value);
-        }
-
-        $this->value = $value;
+        $this->value = self::parse($value);
     }
 
     /**
@@ -25,6 +21,45 @@ final class Byte implements \Stringable
     public function __toString(): string
     {
         return self::humanize($this->value);
+    }
+
+    /**
+     * @return string
+     */
+    public function toString(): string
+    {
+        return self::humanize($this->value);
+    }
+
+    public function to(string $units = 'b'): string
+    {
+        return match (strtolower($units)) {
+            'kb' => $this->value / 1024 . ' kB',
+            'mb' => $this->value / pow(1024, 2) . ' MB',
+            'gb' => $this->value / pow(1024, 3) . ' GB',
+            'tb' => $this->value / pow(1024, 4) . ' TB',
+            default => $this->value . ' B'
+        };
+    }
+
+    public function toKb(): string
+    {
+        return $this->to('kB');
+    }
+
+    public function toMb(): string
+    {
+        return $this->to('mb');
+    }
+
+    public function toGb(): string
+    {
+        return $this->to('gb');
+    }
+
+    public function toTb(): string
+    {
+        return $this->to('tb');
     }
 
     /**
@@ -41,7 +76,7 @@ final class Byte implements \Stringable
      */
     public function compare(int|string $size): int
     {
-        !is_string($size) ?: $size = self::parse($size);
+        $size = self::parse($size);
 
         if ($size == $this->value) {
             return self::COMPARE_EQ;
@@ -53,21 +88,27 @@ final class Byte implements \Stringable
 
         return self::COMPARE_LT;
     }
-    
+
+    /**
+     * @param int|string $size
+     * @return $this
+     */
     public function increment(int|string $size): self
     {
-        $this->value += self::parse($size);
-        return $this;
+        return new self($this->value + self::parse($size));
     }
-    
+
+    /**
+     * @param int|string $size
+     * @return $this
+     */
     public function decrement(int|string $size): self
     {
         if (($size = self::parse($size)) > $this->value) {
             throw new \LogicException('[ $size ] can not be greater than '. $this->value);
         }
-        
-        $this->value -= $size;
-        return $this;
+
+        return new self($this->value - $size);
     }
 
 
