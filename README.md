@@ -8,9 +8,9 @@ $byte = new Byte(100*pow(1000, 2));
 
 echo $byte->to('gb', 2); // 0.1 GB
 echo $byte->toString(); // 100 MB
-echo $byte->value; // 104857600
+echo $byte->value; // 100000000
 
-$operand = 101*1024*1024;
+$operand = 101*1000*1000;
 
 // Returns -1 if $byte->value is less than $operand. Returns 1 if $byte->value is greater than $operand. Returns 0 if $byte->value and $operand are equal
 $byte->compare($operand) // -1
@@ -24,5 +24,5 @@ $byte->greaterThan($operand) // false
 ($byte = $byte->decrement('50mb'))->value; // 157286400
 
 Byte::humanize($operand); // 101 MB
-Byte::parse('101 mb'); // 105906176
+Byte::parse('101 mb'); // 101000000
 ```
