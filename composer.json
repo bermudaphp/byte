@@ -1,9 +1,9 @@
 {
-  "name": "bermudaphp/utils-byte",
+  "name": "bermudaphp/byte",
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "Bermuda\\Utils\\": "src/"
+      "Bermuda\\Stdlib\\": "src/"
     }
   },
   "require": {
