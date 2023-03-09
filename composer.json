@@ -1,5 +1,5 @@
 {
-  "name": "bermudaphp/byte",
+  "name": "bermudaphp/utils-byte",
   "license": "MIT",
   "autoload": {
     "psr-4": {
