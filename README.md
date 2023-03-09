@@ -4,7 +4,7 @@ composer require bermudaphp/byte
 ````
 # Usage
 ```php
-$byte = new Byte(100*1024*1024);
+$byte = new Byte(100*pow(1000, 2));
 
 echo $byte->to('gb', 2); // 0.1 GB
 echo $byte->toString(); // 100 MB
