@@ -264,10 +264,10 @@ final class Byte implements \Stringable
      */
     public static function humanize(int|float $bytes, int $precision = 2, string $delim = ' '): string
     {
-        foreach (self::units as $exponent => $unit) {
+        foreach (self::units as $unit => $exponent) {
             if (($result = $bytes / pow(self::amount, $exponent)) < 1) continue;
             if ($precision) $result = round($result, $precision);
-            return "$result$delim".self::units[$exponent];
+            return "$result$delim$unit";
         }
     }
 
