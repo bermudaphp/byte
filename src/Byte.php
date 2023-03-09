@@ -4,15 +4,41 @@ namespace Bermuda\Stdlib;
 
 final class Byte implements \Stringable
 {
-    public readonly int|float $value;
-    
     public const COMPARE_LT = -1;
     public const COMPARE_EQ = 0;
     public const COMPARE_GT = 1;
+
+    public readonly int|float $value;
+
+    private const units = [
+        'YB' => 8, 'ZB' => 7, 'EB' => 6,
+        'PB' => 5, 'TB' => 4, 'GB' => 3,
+        'MB' => 2, 'kB' => 1, 'B'  => 0
+    ];
     
+    private const amount = 1024;
+
     public function __construct(int|float|string $value)
     {
         $this->value = self::parse($value);
+    }
+
+    /**
+     * @param int|string $value
+     * @return static
+     */
+    public static function new(int|string $value): self
+    {
+        return new self(is_int($value) ? $value : self::parse($value));
+    }
+
+    /**
+     * @param int $value
+     * @return $this
+     */
+    public function b(int $value): self
+    {
+        return new self($value);
     }
 
     /**
@@ -21,7 +47,7 @@ final class Byte implements \Stringable
      */
     public static function kb(int $value): self
     {
-        return new self($value*pow(1000, 1));
+        return new self($value*pow(self::amount, self::units['KB']));
     }
 
     /**
@@ -30,7 +56,7 @@ final class Byte implements \Stringable
      */
     public static function mb(int $value): self
     {
-        return new self($value*pow(1000, 2));
+        return new self($value*pow(self::amount, self::units['MB']));
     }
 
     /**
@@ -39,7 +65,7 @@ final class Byte implements \Stringable
      */
     public static function gb(int $value): self
     {
-        return new self($value*pow(1000, 3));
+        return new self($value*pow(self::amount, self::units['GB']));
     }
 
     /**
@@ -48,7 +74,7 @@ final class Byte implements \Stringable
      */
     public static function tb(int $value): self
     {
-        return new self($value*pow(1000, 4));
+        return new self($value*pow(self::amount, self::units['TB']));
     }
 
     /**
@@ -57,7 +83,7 @@ final class Byte implements \Stringable
      */
     public static function pb(int $value): self
     {
-        return new self($value*pow(1000, 5));
+        return new self($value*pow(self::amount, self::units['PB']));
     }
 
     /**
@@ -66,7 +92,7 @@ final class Byte implements \Stringable
      */
     public static function eb(int $value): self
     {
-        return new self($value*pow(1000, 6));
+        return new self($value*pow(self::amount, self::units['EB']));
     }
 
     /**
@@ -75,7 +101,7 @@ final class Byte implements \Stringable
      */
     public static function zb(int $value): self
     {
-        return new self($value*pow(1000, 7));
+        return new self($value*pow(self::amount, self::units['ZB']));
     }
 
     /**
@@ -84,7 +110,7 @@ final class Byte implements \Stringable
      */
     public static function yb(int $value): self
     {
-        return new self($value*pow(1000, 8));
+        return new self($value*pow(self::amount, self::units['YB']));
     }
 
     /**
@@ -103,30 +129,31 @@ final class Byte implements \Stringable
         return self::humanize($this->value);
     }
 
+    /**
+     * @param string $units
+     * @param int|null $precision
+     * @param string $delim
+     * @return string
+     */
     public function to(string $units = 'b', int $precision = null, string $delim = ' '): string
     {
-        $segments = match (strtolower($units)) {
-            'kb' => [$this->value / 1000, 'kB'],
-            'mb' => [$this->value / pow(1000, 2),  'MB'],
-            'gb' => [$this->value / pow(1000, 3), 'GB'],
-            'tb' => [$this->value / pow(1000, 4), 'TB'],
-            'pb' => [$this->value / pow(1000, 5), 'PB'],
-            'eb' => [$this->value / pow(1000, 6), 'EB'],
-            'zb' => [$this->value / pow(1000, 7), 'ZB'],
-            'yb' => [$this->value / pow(1000, 8), 'YB'],
-            default => [$this->value, 'B']
-        };
+        $units = strtolower($units);
+        foreach (self::units as $unit => $exponent) {
+            if ($units == strtolower($unit)) {
+                if ($precision) return round($this->value / pow(self::amount, $exponent), $precision)
+                    . "$delim$unit";
 
-        if ($precision) {
-            return round($segments[0], $precision) . "{$delim}{$segments[1]}";
+                return $this->value / pow(self::amount, $exponent)
+                    . "$delim$units";
+            }
         }
 
-        return implode($delim, $segments);
+        return $this->value / self::amount . "{$delim}B";
     }
 
     public function toKb(int $precision = null, string $delim = ' '): string
     {
-        return $this->to('kB', $precision, $delim);
+        return $this->to('kb', $precision, $delim);
     }
 
     public function toMb(int $precision = null, string $delim = ' '): string
@@ -237,16 +264,11 @@ final class Byte implements \Stringable
      */
     public static function humanize(int|float $bytes, int $precision = 2, string $delim = ' '): string
     {
-        $exponent = 8;
-        $units = ['kB','MB','GB','TB', 'PB', 'EB', 'ZB', 'YB'];
-        while ($exponent > 0) {
-            if (($result = $bytes / pow(1000, $exponent--)) >= 1) {
-                if ($precision) $result = round($result, $precision);
-                return "$result$delim$units[$exponent]";
-            }
+        foreach (self::units as $exponent => $unit) {
+            if (($result = $bytes / pow(self::amount, $exponent)) < 1) continue;
+            if ($precision) $result = round($result, $precision);
+            return "$result$delim".self::units[$exponent];
         }
-
-        return "$bytes{$delim}B";
     }
 
     /**
@@ -254,29 +276,21 @@ final class Byte implements \Stringable
      * @return int
      * @throws \InvalidArgumentException
      */
-    public static function parse(self|string $string): int|float
+    public static function parse(self|string $string): self|int|float
     {
-        if (is_numeric($string)) return $string;
+        if (is_numeric($string)) return $string + 0;
         if ($string instanceof self) return $string->value;
 
-        if (
-            str_ends_with($string = strtolower($string), 'b')
-            && is_numeric($bytes = trim(substr($string, 0, -1)))
-        ) {
-            return $bytes;
+        $bytes = trim(substr($string, 0, -2));
+        $units = strtolower(trim(substr($string, -2, 2)));
+
+        if (!is_numeric($bytes)) goto end;
+
+        foreach (self::units as $unit => $exponent) {
+            if (strtolower($unit) == $units) return $bytes * pow(self::amount, $exponent);
         }
 
-        $isNumeric = is_numeric($bytes = trim(substr($string, 0, -2)));
-
-        if (($n = substr($string, -2, 2)) == 'kb' && $isNumeric) return $bytes * 1000;
-        if ($n == 'mb' && $isNumeric) return $bytes * pow(1000, 2);
-        if ($n == 'gb' && $isNumeric) return $bytes * pow(1000, 3);
-        if ($n == 'tb' && $isNumeric) return $bytes * pow(1000, 4);
-        if ($n == 'pb' && $isNumeric) return $bytes * pow(1000, 5);
-        if ($n == 'eb' && $isNumeric) return $bytes * pow(1000, 6);
-        if ($n == 'zb' && $isNumeric) return $bytes * pow(1000, 7);
-        if ($n == 'yb' && $isNumeric) return $bytes * pow(1000, 8);
-
+        end:
         throw new \InvalidArgumentException('Failed to parse string');
     }
 }
