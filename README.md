@@ -20,8 +20,8 @@ $byte->equalTo($operand) // false
 $byte->lessThan($operand) // true
 $byte->greaterThan($operand) // false
 
-($byte = $byte->increment('100mb'))->value; // 209715200
-($byte = $byte->decrement('50mb'))->value; // 157286400
+($byte = $byte->increment('100mb'))->value; // 200000000
+($byte = $byte->decrement('50mb'))->value; // 150000000
 
 Byte::humanize($operand); // 101 MB
 Byte::parse('101 mb'); // 101000000
