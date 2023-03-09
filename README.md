@@ -13,11 +13,15 @@ echo $byte->value; // 104857600
 $operand = 101*1024*1024;
 
 // Returns -1 if $byte->value is less than $operand. Returns 1 if $byte->value is greater than $operand. Returns 0 if $byte->value and $operand are equal
-$result = $byte->compare($operand) // -1
+$byte->compare($operand) // -1
+$byte->compare('999kb') // 1
 
-$result = $byte->equalTo($operand) // false
-$result = $byte->lessThan($operand) // true
-$result = $byte->greaterThan($operand) // false
+$byte->equalTo($operand) // false
+$byte->lessThan($operand) // true
+$byte->greaterThan($operand) // false
+
+($byte = $byte->increment('100mb'))->value; // 209715200
+($byte = $byte->decrement('50mb'))->value; // 157286400
 
 Byte::humanize($operand); // 101 MB
 Byte::parse('101 mb'); // 105906176
