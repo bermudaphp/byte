@@ -81,67 +81,70 @@ final class Byte implements \Stringable
     }
 
     /**
-     * @param int|string $size
+     * @param Byte|int|string $operand
+     * Returns -1 if $this->value is less than $operand.
+     * Returns 1 if $this->value is greater than $operand.
+     * Returns 0 if $this->value and $operand are equal
      * @return int
      */
-    public function compare(self|int|string $size): int
+    public function compare(self|int|string $operand): int
     {
-        $size = self::parse($size);
+        $operand = self::parse($operand);
 
-        if ($size == $this->value) return self::COMPARE_EQ;
-        if ($size > $this->value) return self::COMPARE_GT;
+        if ($operand == $this->value) return self::COMPARE_EQ;
+        if ($this->value > $operand) return self::COMPARE_GT;
 
         return self::COMPARE_LT;
     }
 
     /**
-     * @param int|string $size
+     * @param Byte|int|string $value
      * @return $this
      */
-    public function increment(self|int|string $size): self
+    public function increment(self|int|string $value): self
     {
-        return new self($this->value + self::parse($size));
+        return new self($this->value + self::parse($value));
     }
 
     /**
-     * @param int|string $size
+     * @param Byte|int|string $value
      * @return $this
      */
-    public function decrement(self|int|string $size): self
+    public function decrement(self|int|string $value): self
     {
-        if (($size = self::parse($size)) > $this->value) {
-            throw new \LogicException('[ $size ] can not be greater than '. $this->value);
+        if (($value = self::parse($value)) > $this->value) {
+            throw new \LogicException('[$value] can not be greater than '. $this->value);
         }
 
-        return new self($this->value - $size);
+        return new self($this->value - $value);
     }
 
 
     /**
-     * @param Byte|int|string $size
+     * @param Byte|int|string $operand
      * @return bool
      */
-    public function equalTo(self|int|string $size): bool
+    public function equalTo(self|int|string $operand): bool
     {
-        return self::parse($size) == $this->value;
+        return self::parse($operand) == $this->value;
     }
 
     /**
-     * @param Byte|int|string $size
+     * @param Byte|int|string $operand
      * @return bool
      */
-    public function lessThan(self|int|string $size): bool
+    public function lessThan(self|int|string $operand): bool
     {
-        return self::parse($size) > $this->value;
+        return self::parse($operand) > $this->value;
     }
 
     /**
-     * @param int|string $size
+     * @param int|string $operand
      * @return bool
      */
-    public function greaterThan(int|string $size): bool
+    public function greaterThan(int|string $operand): bool
     {
-        return $this->value > self::parse($size);
+        return $this->value > self::parse($operand);
     }
 
     /**
@@ -150,7 +153,7 @@ final class Byte implements \Stringable
      */
     public static function humanize(int $bytes): string
     {
-        return round($bytes / pow(1024, $i = floor(log($bytes, 1024))), [0,0,2,2,3][$i]).['B','kB','MB','GB','TB'][$i];
+        return round($bytes / pow(1024, $i = floor(log($bytes, 1024))), [0,0,2,2,3][$i]).[' B',' kB',' MB',' GB',' TB'][$i];
     }
 
     /**
@@ -162,28 +165,20 @@ final class Byte implements \Stringable
     {
         if (is_numeric($string)) return $string;
         if ($string instanceof self) return $string->value;
-        
-        if (str_ends_with($string, 'B') && is_numeric($bytes = substr($string, 0, -1))) {
+
+        if (
+            str_ends_with($string = strtolower($string), 'b')
+            && is_numeric($bytes = substr($string, 0, -1))
+        ) {
             return $bytes;
         }
 
-        $isNumeric = is_numeric($bytes = substr($string, 0, -2));
+        $isNumeric = is_numeric($bytes = trim(substr($string, 0, -2)));
 
-        if (($n = substr($string, -2, 2)) == 'kB' && $isNumeric) {
-            return $bytes * 1024;
-        }
-
-        if ($n == 'MB' && $isNumeric) {
-            return $bytes * pow(1024, 2);
-        }
-
-        if ($n == 'GB' && $isNumeric) {
-            return $bytes * pow(1024, 3);
-        }
-
-        if ($n == 'TB' && $isNumeric) {
-            return $bytes * pow(1024, 4);
-        }
+        if (($n = substr($string, -2, 2)) == 'kb' && $isNumeric) return $bytes * 1024;
+        if ($n == 'mb' && $isNumeric) return $bytes * pow(1024, 2);
+        if ($n == 'gb' && $isNumeric) return $bytes * pow(1024, 3);
+        if ($n == 'tb' && $isNumeric) return $bytes * pow(1024, 4);
 
         throw new \InvalidArgumentException('Failed to parse string');
     }
