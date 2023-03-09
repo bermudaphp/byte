@@ -173,28 +173,28 @@ final class Byte implements \Stringable
      * @return int
      * @throws \InvalidArgumentException
      */
-    public static function parse(self|string $string): int
+    public static function parse(self|string $string, bool $instantiate = false): int|Byte
     {
-        if (is_numeric($string)) return $string;
-        if ($string instanceof self) return $string->value;
+        if (is_numeric($string)) return $instantiate ? new self($string) : $string;
+        if ($string instanceof self) return $instantiate ? clone $string : $string->value;
 
         if (
             str_ends_with($string = strtolower($string), 'b')
             && is_numeric($bytes = trim(substr($string, 0, -1)))
         ) {
-            return $bytes;
+            return $instantiate ? new self($bytes) : $bytes;
         }
 
         $isNumeric = is_numeric($bytes = trim(substr($string, 0, -2)));
 
         if (($n = substr($string, -2, 2)) == 'kb' && $isNumeric) return $bytes * 1024;
-        if ($n == 'mb' && $isNumeric) return $bytes * pow(1024, 2);
-        if ($n == 'gb' && $isNumeric) return $bytes * pow(1024, 3);
-        if ($n == 'tb' && $isNumeric) return $bytes * pow(1024, 4);
-        if ($n == 'pb' && $isNumeric) return $bytes * pow(1024, 5);
-        if ($n == 'eb' && $isNumeric) return $bytes * pow(1024, 6);
-        if ($n == 'zb' && $isNumeric) return $bytes * pow(1024, 7);
-        if ($n == 'yb' && $isNumeric) return $bytes * pow(1024, 8);
+        if ($n == 'mb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 2)) : $bytes * pow(1024, 2);
+        if ($n == 'gb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 3)) : $bytes * pow(1024, 3);
+        if ($n == 'tb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 4)) : $bytes * pow(1024, 4);
+        if ($n == 'pb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 5)) : $bytes * pow(1024, 5);
+        if ($n == 'eb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 6)) : $bytes * pow(1024, 6);
+        if ($n == 'zb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 7)) : $bytes * pow(1024, 7);
+        if ($n == 'yb' && $isNumeric) return $instantiate ? new self($bytes * pow(1024, 8)) : $bytes * pow(1024, 8);
 
         throw new \InvalidArgumentException('Failed to parse string');
     }
