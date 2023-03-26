@@ -273,10 +273,10 @@ final class Byte implements \Stringable
 
     /**
      * @param string $string
-     * @return int
+     * @return int|float
      * @throws \InvalidArgumentException
      */
-    public static function parse(self|string $string): self|int|float
+    public static function parse(self|string $string): int|float
     {
         if (is_numeric($string)) return $string + 0;
         if ($string instanceof self) return $string->value;
