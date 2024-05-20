@@ -240,6 +240,20 @@ final class Byte implements \Stringable
         return self::parse($operand) == $this->value;
     }
 
+    public function divide(self|int|float|string $value): self
+    {
+        if (($value = self::parse($value)) > $this->value) {
+            throw new \LogicException('[$value] can not be greater than '. $this->value);
+        }
+
+        return new self($this->value - $value);
+    }
+
+    public function multiply(self|int|float|string $value): self
+    {
+        return new self($this->value * $value);
+    }
+
     /**
      * @param Byte|int|float|string $operand
      * @return bool
