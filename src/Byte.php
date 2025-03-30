@@ -135,7 +135,7 @@ final class Byte implements \Stringable
      * @param string $delim
      * @return string
      */
-    public function to(string $units = 'b', int $precision = null, string $delim = ' '): string
+    public function to(string $units = 'b', ?int $precision = null, string $delim = ' '): string
     {
         $units = strtolower($units);
         foreach (self::units as $unit => $exponent) {
@@ -151,42 +151,42 @@ final class Byte implements \Stringable
         return $this->value / self::amount . "{$delim}B";
     }
 
-    public function toKb(int $precision = null, string $delim = ' '): string
+    public function toKb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('kb', $precision, $delim);
     }
 
-    public function toMb(int $precision = null, string $delim = ' '): string
+    public function toMb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('mb', $precision, $delim);
     }
 
-    public function toGb(int $precision = null, string $delim = ' '): string
+    public function toGb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('gb', $precision, $delim);
     }
 
-    public function toTb(int $precision = null, string $delim = ' '): string
+    public function toTb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('tb', $precision, $delim);
     }
 
-    public function toPb(int $precision = null, string $delim = ' '): string
+    public function toPb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('pb', $precision, $delim);
     }
 
-    public function toEb(int $precision = null, string $delim = ' '): string
+    public function toEb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('eb', $precision, $delim);
     }
 
-    public function toZb(int $precision = null, string $delim = ' '): string
+    public function toZb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('zb', $precision, $delim);
     }
 
-    public function toYb(int $precision = null, string $delim = ' '): string
+    public function toYb(?int $precision = null, string $delim = ' '): string
     {
         return $this->to('yb', $precision, $delim);
     }
