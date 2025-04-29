@@ -469,7 +469,7 @@ final class Byte implements \Stringable
      * @throws \InvalidArgumentException If the input is a string that does not contain a valid numeric part or if the provided unit is not recognized.
      *
      * Error Description:
-     * The method expects a string in the format "[number][space][unit]" (for example, "1024 kB") or a similar valid variation.
+     * The method expects a string in the format "[number][unit]" (for example, "1024 kB") or a similar valid variation.
      * If the numeric part is not valid or the unit is not found within the supported units, the method throws an InvalidArgumentException
      * with the message "Failed to parse string". This error indicates that the input value does not conform to an expected byte format.
      */
