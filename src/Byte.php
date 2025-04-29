@@ -202,14 +202,13 @@ final class Byte implements \Stringable
      */
     public function to(string $units = 'b', ?int $precision = null, string $delim = ' '): string
     {
-        $units = strtolower($units);
         foreach (self::units as $unit => $exponent) {
-            if ($units == strtolower($unit)) {
+            if (strcasecmp($units, $unit) === 0) {
                 if ($precision) return round($this->value / pow(self::amount, $exponent), $precision)
                     . "$delim$unit";
 
                 return $this->value / pow(self::amount, $exponent)
-                    . "$delim$units";
+                    . "$delim$unit";
             }
         }
 
@@ -327,7 +326,7 @@ final class Byte implements \Stringable
     {
         return $this->to('yb', $precision, $delim);
     }
-    
+
     /**
      * Compares this Byte instance with another value.
      *
@@ -469,7 +468,7 @@ final class Byte implements \Stringable
      * @throws \InvalidArgumentException If the input is a string that does not contain a valid numeric part or if the provided unit is not recognized.
      *
      * Error Description:
-     * The method expects a string in the format "[number][unit]" (for example, "1024 kB") or a similar valid variation.
+     * The method expects a string in the format "[number][space][unit]" (for example, "1024 kB") or a similar valid variation.
      * If the numeric part is not valid or the unit is not found within the supported units, the method throws an InvalidArgumentException
      * with the message "Failed to parse string". This error indicates that the input value does not conform to an expected byte format.
      */
@@ -477,13 +476,13 @@ final class Byte implements \Stringable
     {
         // If the value is numeric, simply return it as an integer or float.
         if (is_numeric($value)) return $value + 0;
-        
+
         // If the value is already a Byte instance, use its stored byte value.
         if ($value instanceof self) return $value->value;
 
         // Assume the string format ends with a two-character unit (e.g., "MB", "GB").
         $bytes = trim(substr($value, 0, -2));
-        $units = strtoupper(trim(substr($value, -2, 2)));
+        $units = trim(substr($value, -2, 2));
 
         // If the numeric part is not valid, or if the unit is not recognized, throw an exception.
         if (!is_numeric($bytes)) {
@@ -491,7 +490,7 @@ final class Byte implements \Stringable
         }
 
         foreach (self::units as $unit => $exponent) {
-            if ($unit == $units) return $bytes * pow(self::amount, $exponent);
+            if (strcasecmp($unit, $units) === 0) return $bytes * pow(self::amount, $exponent);
         }
 
         throw new \InvalidArgumentException('Failed to parse string: Unrecognized unit.');
