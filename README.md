@@ -30,7 +30,7 @@ echo $byte->toMb(2); // For example, might output "1 MB"
 
 // Arithmetic operations:
 $byteIncremented = $byte->increment(1024); // Increase the value by 1024 bytes
-echo $byteIncremented->toString();
+echo $byteIncremented->toString(); // output "2 MB"
 
 // Comparison:
 if ($byte->greaterThan(500)) {
