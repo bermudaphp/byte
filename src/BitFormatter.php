@@ -164,7 +164,11 @@ final class BitFormatter
      */
     public static function loadDefaults(): void
     {
+        $default = self::$defaultLanguage;
+        
         self::loadLanguagesFromDirectory(dirname(__DIR__) . '/languages');
+        
+        self::$defaultLanguage = $default;
     }
 
     /**
