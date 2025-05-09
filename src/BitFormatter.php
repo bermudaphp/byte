@@ -145,6 +145,29 @@ final class BitFormatter
     }
 
     /**
+     * Loads the default language files shipped with the library.
+     *
+     * This method automatically loads all language translations from the package's
+     * 'languages' directory. It's a convenient way to initialize all available
+     * translations without having to manually specify each language file.
+     *
+     * Usage:
+     * ```
+     * BitFormatter::loadDefaults();
+     * // Now you can use any of the pre-packaged languages
+     * echo BitFormatter::formatTime(3665, 'ru'); // "1 час и 1 минута"
+     * ```
+     *
+     * @return void
+     * @throws \InvalidArgumentException If the default languages directory cannot be accessed
+     *                                  or contains invalid translation files
+     */
+    public static function loadDefaults(): void
+    {
+        self::loadLanguagesFromDirectory(dirname(__DIR__) . '/languages');
+    }
+
+    /**
      * Loads multiple language files from a directory.
      *
      * @param string $directory Directory containing translation files
@@ -197,7 +220,7 @@ final class BitFormatter
         }
 
         $minutes = floor($seconds / 60);
-        $remainingSeconds = $seconds % 60;
+        $remainingSeconds = (int) $seconds % 60;
 
         if ($minutes < 1) {
             $formattedSeconds = round($remainingSeconds);
@@ -205,7 +228,7 @@ final class BitFormatter
         }
 
         $hours = floor($minutes / 60);
-        $remainingMinutes = $minutes % 60;
+        $remainingMinutes = (int) $minutes % 60;
 
         if ($hours < 1) {
             $result = self::formatUnit($remainingMinutes, 'minute', $lang);
@@ -216,7 +239,7 @@ final class BitFormatter
         }
 
         $days = floor($hours / 24);
-        $remainingHours = $hours % 24;
+        $remainingHours = (int) $hours % 24;
 
         if ($days < 1) {
             $result = self::formatUnit($remainingHours, 'hour', $lang);
@@ -230,6 +253,7 @@ final class BitFormatter
         if ($remainingHours > 0) {
             $result .= self::getTimeSeparator($lang) . self::formatUnit($remainingHours, 'hour', $lang);
         }
+
         return $result;
     }
 
