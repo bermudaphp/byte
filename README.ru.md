@@ -1,19 +1,23 @@
-# Класс Byte
+# Классы Byte и BitRate
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D8.4-blue.svg)](https://www.php.net/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 *Read this in other languages: [English](README.md)*
 
 ## Обзор
 
-`Byte` — это надежный PHP-класс, предназначенный для работы с единицами измерения данных (байты, килобайты, мегабайты и т.д.). Он предоставляет полный набор методов для конвертации, сравнения, арифметических операций и форматирования в удобочитаемом виде.
+Библиотека предоставляет PHP-классы для работы с размерами данных (Byte) и скоростью передачи данных (BitRate) с полным набором функций для конвертации, сравнения, арифметических операций и форматирования в удобочитаемом виде.
 
 ## Возможности
 
 - **Конвертация единиц измерения**: Легко преобразуйте данные между различными единицами (B, kB, MB, GB, TB, PB, EB, ZB, YB)
+- **Обработка скорости передачи**: Работайте со скоростями в различных единицах (bps, kbps, Mbps, Gbps и т.д.)
 - **Арифметические операции**: Выполняйте сложение, вычитание, умножение, деление и операции по модулю
-- **Сравнение**: Сравнивайте значения байтов с поддержкой как индивидуальных, так и массовых сравнений
-- **Форматирование**: Форматируйте значения байтов в удобочитаемые строки
+- **Сравнение**: Сравнивайте значения с поддержкой как индивидуальных, так и массовых сравнений
+- **Форматирование**: Форматируйте значения в удобочитаемые строки с поддержкой нескольких языков
 - **Операции с диапазонами**: Создавайте диапазоны значений, находите мин/макс, вычисляйте средние значения
 - **Расчет времени передачи**: Оценивайте время передачи данных на основе пропускной способности
+- **Интернационализация**: Форматируйте временные интервалы на разных языках
 
 ## Установка
 
@@ -25,7 +29,9 @@ composer require bermudaphp/byte
 
 ## Использование
 
-### Создание экземпляров Byte
+### Класс Byte
+
+#### Создание экземпляров Byte
 
 Существует несколько способов создания экземпляра `Byte`:
 
@@ -51,7 +57,7 @@ $bytes = Byte::fromHumanReadable('2.5 GB');
 $bytes = Byte::fromBits(8192); // 1024 байта
 ```
 
-### Конвертация в различные единицы измерения
+#### Конвертация в различные единицы измерения
 
 ```php
 $bytes = new Byte(1536);
@@ -71,7 +77,7 @@ echo $bytes->to('kb', 3, '_'); // "1.500_kB"
 $kbValue = $bytes->getValue('kb'); // 1.5
 ```
 
-### Операции сравнения
+#### Операции сравнения
 
 Класс поддерживает как сравнение с одиночными значениями, так и с множественными значениями в двух режимах:
 - `MODE_ALL`: Возвращает true, только если условие верно для всех значений
@@ -96,7 +102,7 @@ $bytes->between('900 kB', '1.1 MB');                // true
 $bytes->inRanges([['500 kB', '800 kB'], ['1 MB', '1.5 MB']]); // true
 ```
 
-### Арифметические операции
+#### Арифметические операции
 
 ```php
 $bytes = Byte::mb(1);
@@ -124,7 +130,7 @@ $newBytes = $bytes->max('1.5 MB'); // 1.5 MB
 $newBytes = $bytes->min(['2 MB', '500 kB']); // 500 kB
 ```
 
-### Статические операции над коллекциями
+#### Статические операции над коллекциями
 
 ```php
 // Создание диапазона
@@ -141,53 +147,189 @@ $max = Byte::maximum(['1 MB', '500 kB', '2 GB']); // 2 GB
 $min = Byte::minimum(['1 MB', '500 kB', '2 GB']); // 500 kB
 ```
 
-### Конвертация битов
+### Класс BitRate
+
+#### Создание экземпляров BitRate
 
 ```php
-$bytes = new Byte(1024);
+use Bermuda\Stdlib\BitRate;
 
-// Конвертация в биты
-$bits = $bytes->toBits(); // 8192
+// Из числового значения (биты в секунду)
+$rate = new BitRate(1_000_000); // 1 Mbps
 
-// Создание из битов
-$bytes = Byte::fromBits(8192); // 1024 байта
+// Использование статических фабричных методов для битовых скоростей
+$rate = BitRate::bps(1000);     // 1000 бит в секунду
+$rate = BitRate::kbps(1000);    // 1000 килобит в секунду
+$rate = BitRate::mbps(10);      // 10 мегабит в секунду
+$rate = BitRate::gbps(1);       // 1 гигабит в секунду
+
+// Использование статических фабричных методов для байтовых скоростей
+$rate = BitRate::bytesPerSec(125_000);  // 125 КБ/с (эквивалент 1 Mbps)
+$rate = BitRate::kBps(1);               // 1 килобайт в секунду (8 kbps)
+$rate = BitRate::mBps(1);               // 1 мегабайт в секунду (8 Mbps)
+$rate = BitRate::gBps(1);               // 1 гигабайт в секунду (8 Gbps)
+
+// Из любой строки с единицей измерения
+$rate = BitRate::from(10, 'Mbps');      // 10 Mbps
+$rate = BitRate::from(1.5, 'GBps');     // 1.5 GB/s
+
+// Из человекочитаемой строки
+$rate = BitRate::fromHumanReadable('10 Mbps');
 ```
 
-### Расчет времени передачи
+#### Конвертация между единицами измерения
 
 ```php
-$fileSize = Byte::gb(1);
-$bandwidth = Byte::mb(10); // 10 MB/s
+$rate = BitRate::mbps(100);  // 100 Mbps
 
-// Вычисление времени передачи в секундах
-$seconds = $fileSize->getTransferTime($bandwidth); // 102.4 секунды
+// Получение значения в битах или байтах
+$bitsPerSec = $rate->toBits();    // 100,000,000 bps
+$bytesPerSec = $rate->toBytes();  // 12,500,000 B/s
+
+// Конвертация в человекочитаемые форматы
+echo $rate->toString();           // "100 Mbps"
+echo $rate->toString('byte');     // "12.5 MBps"
+
+// Конвертация в определенные единицы
+echo $rate->toMbps();             // "100 Mbps"
+echo $rate->toGbps();             // "0.1 Gbps"
+echo $rate->toMBps();             // "12.5 MBps"
+echo $rate->toKBps();             // "12500 kBps"
+
+// Настройка формата вывода
+echo $rate->to('Mbps', 3, '_');   // "100.000_Mbps"
+```
+
+#### Операции сравнения
+
+```php
+$rate = BitRate::mbps(100);  // 100 Mbps
+
+// Сравнение с другой скоростью
+$rate->equalTo(BitRate::kbps(100000));           // true
+$rate->equalTo('100 Mbps');                      // true
+$rate->equalTo('12.5 MBps');                     // true (эквивалент в байтах)
+
+// Сравнения больше/меньше
+$rate->greaterThan(BitRate::mbps(50));           // true
+$rate->lessThan(BitRate::gbps(1));               // true
+
+// Сравнение с массивами
+$rate->greaterThan(['10 Mbps', '150 Mbps'], BitRate::MODE_ANY);  // true
+```
+
+#### Арифметические операции
+
+```php
+$rate = BitRate::mbps(100);
+
+// Сложение
+$newRate = $rate->increment(BitRate::mbps(50));    // 150 Mbps
+
+// Вычитание
+$newRate = $rate->decrement(BitRate::mbps(30));    // 70 Mbps
+
+// Умножение
+$newRate = $rate->multiply(2);                     // 200 Mbps
+
+// Деление
+$newRate = $rate->divide(4);                       // 25 Mbps
+
+// Ограничение скорости (частный случай умножения)
+$throttledRate = $rate->throttle(0.8);             // 80 Mbps (80% от исходной)
+```
+
+#### Расчеты передачи данных
+
+```php
+$rate = BitRate::mbps(100);      // Скорость скачивания 100 Mbps
+$fileSize = Byte::gb(1);         // Файл размером 1 GB
+
+// Расчет времени передачи
+$seconds = $rate->calculateTransferTime($fileSize);  // 80 секунд
 
 // Получение отформатированного времени передачи
-$time = $fileSize->getFormattedTransferTime($bandwidth); // "1 минута, 42 секунды"
+$time = $rate->getFormattedTransferTime($fileSize);  // "1 минута, 20 секунд"
+
+// Расчет объема данных для заданного времени
+$downloadedSize = $rate->calculateTransferAmount(60);  // 750 MB за 60 секунд
+
+// Оценка размера файла для потоковой передачи
+$streamingRate = BitRate::mbps(5);                    // Видеопоток 5 Mbps
+$videoDuration = 3600;                                // 1 час в секундах
+$videoSize = $streamingRate->estimateFileSize($videoDuration);  // ~2.25 GB
 ```
 
-### Форматирование байтовых значений
+#### Статические операции над коллекциями
 
 ```php
-// Форматирование значений байтов для удобочитаемости
-echo Byte::humanize(1536);             // "1.5 kB"
-echo Byte::humanize(1536, 3);          // "1.500 kB"
-echo Byte::humanize(1536, 2, '_');     // "1.5_kB" 
+$rates = [
+    BitRate::mbps(10),
+    BitRate::mbps(50),
+    BitRate::mbps(100)
+];
+
+// Вычисление среднего
+$avgRate = BitRate::average($rates);  // 53.33 Mbps
+
+// Поиск максимума/минимума
+$maxRate = BitRate::maximum($rates);  // 100 Mbps
+$minRate = BitRate::minimum($rates);  // 10 Mbps
+
+// Вычисление суммы
+$totalRate = BitRate::sum($rates);    // 160 Mbps
+
+// Создание диапазона
+$rangeRates = BitRate::range(
+    BitRate::mbps(10), 
+    BitRate::mbps(50), 
+    BitRate::mbps(10)
+);  // [10 Mbps, 20 Mbps, 30 Mbps, 40 Mbps, 50 Mbps]
 ```
 
-### Проверка состояния
+### BitFormatter для интернационализации
+
+Класс `BitFormatter` предоставляет функциональность форматирования с поддержкой нескольких языков:
 
 ```php
-$bytes = new Byte(1024);
+use Bermuda\Stdlib\BitFormatter;
+use Bermuda\Stdlib\Byte;
+use Bermuda\Stdlib\BitRate;
 
-$bytes->isZero();      // false
-$bytes->isPositive();  // true
-$bytes->isNegative();  // false
+// Загрузка файлов переводов
+BitFormatter::loadLanguage('/path/to/translations/en.php');
+BitFormatter::loadLanguage('/path/to/translations/fr.php');
+BitFormatter::loadLanguage('/path/to/translations/ru.php');
+
+// Или загрузка всех переводов из директории
+BitFormatter::loadLanguagesFromDirectory('/path/to/translations');
+
+// Форматирование времени на разных языках
+$fileSize = Byte::gb(2);
+$downloadSpeed = BitRate::mbps(25);
+$seconds = BitFormatter::calculateTransferTime($fileSize, $downloadSpeed);
+
+echo BitFormatter::formatTime($seconds, 'en');  // "10 minutes, 40 seconds"
+echo BitFormatter::formatTime($seconds, 'fr');  // "10 minutes et 40 secondes"
+echo BitFormatter::formatTime($seconds, 'ru');  // "10 минут и 40 секунд"
+
+// Установка языка по умолчанию
+BitFormatter::setDefaultLanguage('ru');
+echo BitFormatter::formatTime($seconds);        // "10 минут и 40 секунд"
+
+// Прямое форматирование с классами BitRate и Byte
+echo $downloadSpeed->getFormattedTransferTime($fileSize, 'en');  // "10 minutes, 40 seconds"
+echo $fileSize->getFormattedTransferTime($downloadSpeed, 'ru');  // "10 минут и 40 секунд"
+
+// Форматирование значений данных
+echo BitFormatter::humanizeBytes(1536);  // "1.5 kB"
+echo BitFormatter::humanizeBitRate(1_000_000, 'bit');  // "1 Mbps"
+echo BitFormatter::humanizeBitRate(1_000_000, 'byte');  // "125 kBps"
 ```
 
 ## Обработка ошибок
 
-Класс выбрасывает исключения в следующих ситуациях:
+Классы выбрасывают исключения в следующих ситуациях:
 
 - `\InvalidArgumentException`: При парсинге недопустимых форматов строк или использовании неподдерживаемых единиц измерения
 - `\LogicException`: При попытке уменьшить значение на величину, большую текущего значения
@@ -195,4 +337,4 @@ $bytes->isNegative();  // false
 
 ## Лицензия
 
-Этот пакет является программным обеспечением с открытым исходным кодом, лицензированным под [лицензией MIT](LICENSE.md).
+Этот пакет является программным обеспечением с открытым исходным кодом, лицензированным под [лицензией MIT](LICENSE).
