@@ -304,6 +304,9 @@ BitFormatter::loadLanguage('/path/to/translations/ru.php');
 // Or load all translations from a directory
 BitFormatter::loadLanguagesFromDirectory('/path/to/translations');
 
+/* The library comes with built-in translations for multiple languages. You can load all available translations at once using the `loadDefaults()` method*/
+BitFormatter::loadDefaults()
+
 // Format time in different languages
 $fileSize = Byte::gb(2);
 $downloadSpeed = BitRate::mbps(25);
