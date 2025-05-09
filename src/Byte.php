@@ -756,8 +756,6 @@ final class Byte implements \Stringable
     /**
      * Converts the given byte numeric value to a human-readable string with appropriate units.
      *
-     * Iterates over supported units and computes the value in that unit.
-     *
      * @param int|float $bytes The number of bytes.
      * @param int $precision The number of decimal places to round the result.
      * @param string $delim The delimiter between the number and the unit.
@@ -765,14 +763,7 @@ final class Byte implements \Stringable
      */
     public static function humanize(int|float $bytes, int $precision = 2, string $delim = ' '): string
     {
-        foreach (self::units as $unit => $exponent) {
-            if (($result = $bytes / pow(self::amount, $exponent)) < 1) continue;
-            if ($precision) $result = round($result, $precision);
-            return "$result$delim$unit";
-        }
-
-        // If all conversions result in < 1, return bytes
-        return "$bytes{$delim}B";
+        return BitFormatter::humanizeBytes($bytes, $precision, $delim);
     }
 
     /**
@@ -968,70 +959,27 @@ final class Byte implements \Stringable
     }
 
     /**
-     * Calculates the transfer time in seconds based on a bandwidth.
+     * Calculates the transfer time in seconds based on a bit rate.
      *
-     * @param Byte|int|float|string $bandwidthPerSecond The bandwidth in bytes per second.
+     * @param BitRate|int|float|string $bitRate The bit rate in bits per second, or bytes per second if numeric.
      * @return float The time in seconds.
-     * @throws \InvalidArgumentException If bandwidth is zero or negative.
+     * @throws \InvalidArgumentException If bit rate is zero or negative.
      */
-    public function getTransferTime(Byte|int|float|string $bandwidthPerSecond): float
+    public function getTransferTime(BitRate|int|float|string $bitRate): float
     {
-        $bandwidth = self::parse($bandwidthPerSecond);
-
-        if ($bandwidth <= 0) {
-            throw new \InvalidArgumentException("Bandwidth must be positive");
-        }
-
-        return $this->value / $bandwidth;
+        return BitFormatter::calculateTransferTime($this, $bitRate);
     }
 
     /**
-     * Formats the transfer time into a human-readable string.
+     * Formats the transfer time into a human-readable string based on a bit rate.
      *
-     * @param Byte|int|float|string $bandwidthPerSecond The bandwidth in bytes per second.
+     * @param BitRate|int|float|string $bitRate The bit rate in bits per second, or bytes per second if numeric.
+     * @param string|null $language Language to use for formatting (null uses default)
      * @return string A formatted string like "5 minutes, 30 seconds".
      */
-    public function getFormattedTransferTime(Byte|int|float|string $bandwidthPerSecond): string
+    public function getFormattedTransferTime(BitRate|int|float|string $bitRate, ?string $language = null): string
     {
-        $seconds = $this->getTransferTime($bandwidthPerSecond);
-
-        if ($seconds < 1) {
-            return "less than a second";
-        }
-
-        $minutes = floor($seconds / 60);
-        $remainingSeconds = $seconds % 60;
-
-        if ($minutes < 1) {
-            return round($remainingSeconds) . " second" . ($remainingSeconds == 1 ? "" : "s");
-        }
-
-        $hours = floor($minutes / 60);
-        $remainingMinutes = $minutes % 60;
-
-        if ($hours < 1) {
-            $result = $remainingMinutes . " minute" . ($remainingMinutes == 1 ? "" : "s");
-            if ($remainingSeconds > 0) {
-                $result .= ", " . round($remainingSeconds) . " second" . ($remainingSeconds == 1 ? "" : "s");
-            }
-            return $result;
-        }
-
-        $days = floor($hours / 24);
-        $remainingHours = $hours % 24;
-
-        if ($days < 1) {
-            $result = $remainingHours . " hour" . ($remainingHours == 1 ? "" : "s");
-            if ($remainingMinutes > 0) {
-                $result .= ", " . $remainingMinutes . " minute" . ($remainingMinutes == 1 ? "" : "s");
-            }
-            return $result;
-        }
-
-        $result = $days . " day" . ($days == 1 ? "" : "s");
-        if ($remainingHours > 0) {
-            $result .= ", " . $remainingHours . " hour" . ($remainingHours == 1 ? "" : "s");
-        }
-        return $result;
+        $seconds = $this->getTransferTime($bitRate);
+        return BitFormatter::formatTime($seconds, $language);
     }
 }
