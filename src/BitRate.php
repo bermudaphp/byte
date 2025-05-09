@@ -208,7 +208,7 @@ final class BitRate implements \Stringable
      * @return static A new BitRate instance
      * @throws \InvalidArgumentException If the unit is not supported
      */
-    public static function from(int|float $value, string $unit, bool $displayAsBits = null): self
+    public static function from(int|float $value, string $unit, ?bool $displayAsBits = null): self
     {
         $unit = strtolower($unit);
         $isBit = true;
@@ -416,7 +416,7 @@ final class BitRate implements \Stringable
      * @param string $delim The delimiter between value and unit
      * @return string Human-readable representation
      */
-    public function toString(string $type = null, int $precision = 2, string $delim = ' '): string
+    public function toString(?string $type = null, int $precision = 2, string $delim = ' '): string
     {
         $type = $type ?? ($this->displayAsBits ? 'bit' : 'byte');
         return $this->humanizeRate($this->value, $type, $precision, $delim);
@@ -758,7 +758,7 @@ final class BitRate implements \Stringable
      * @param bool $displayAsBits Whether to display the rate as bits or bytes by default
      * @return static A new BitRate instance
      */
-    public static function fromHumanReadable(string $rateString, bool $displayAsBits = null): static
+    public static function fromHumanReadable(string $rateString, ?bool $displayAsBits = null): static
     {
         if ($displayAsBits === null) {
             // Try to guess the default display mode based on the unit type
