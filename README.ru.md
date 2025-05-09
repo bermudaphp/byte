@@ -20,7 +20,7 @@
 Вы можете установить пакет через composer:
 
 ```bash
-composer require bermuda/byte
+composer require bermudaphp/byte
 ```
 
 ## Использование
