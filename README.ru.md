@@ -304,6 +304,9 @@ BitFormatter::loadLanguage('/path/to/translations/ru.php');
 // Или загрузка всех переводов из директории
 BitFormatter::loadLanguagesFromDirectory('/path/to/translations');
 
+/* Библиотека поставляется со встроенными переводами для нескольких языков. Вы можете загрузить все доступные переводы сразу с помощью метода `loadDefaults()`*/
+BitFormatter::loadDefaults();
+
 // Форматирование времени на разных языках
 $fileSize = Byte::gb(2);
 $downloadSpeed = BitRate::mbps(25);
