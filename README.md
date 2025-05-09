@@ -1,112 +1,198 @@
-# Byte
+# Byte Class
 
-Byte is a PHP library for working with byte values. It allows you to create objects that represent byte quantities, perform arithmetic operations and comparisons on them, and convert them into human-readable strings with appropriate units (B, kB, MB, GB, TB, PB, EB, ZB, YB).
+*Read this in other languages: [Russian](README.ru.md)*
+
+## Overview
+
+`Byte` is a robust PHP class designed for working with data size units (bytes, kilobytes, megabytes, etc.). It provides a comprehensive set of methods for conversion, comparison, arithmetic operations, and human-readable formatting.
 
 ## Features
 
-- **Unit Conversion**: Convert byte values between various units (bytes, kilobytes, megabytes, etc.).
-- **Arithmetic Operations**: Increment, decrement, multiply, and divide byte values.
-- **Comparison**: Compare byte amounts (greater than, less than, equal to).
-- **Human-Readable Output**: Automatically convert byte values to a string representation in the most appropriate unit.
-- **Strict Typing**: Uses modern PHP features (union types, readonly properties, etc.) to ensure code safety.
+- **Unit Conversion**: Easily convert between different data size units (B, kB, MB, GB, TB, PB, EB, ZB, YB)
+- **Arithmetic Operations**: Perform addition, subtraction, multiplication, division, and modulo operations
+- **Comparison**: Compare byte values with support for both individual and array-based comparisons
+- **Formatting**: Format byte values as human-readable strings
+- **Range Operations**: Create ranges of byte values, find min/max, calculate averages
+- **Transfer Time Calculation**: Estimate data transfer times based on bandwidth
 
 ## Installation
 
-You can install the library via [Composer](https://getcomposer.org/):
+You can install the package via composer:
 
 ```bash
-composer require bermudaphp/byte
+composer require bermuda/byte
 ```
+
 ## Usage
+
+### Creating Byte Instances
+
+There are multiple ways to create a `Byte` instance:
 
 ```php
 use Bermuda\Stdlib\Byte;
 
-// Create a Byte object from a string with a unit
-$byte = new Byte('1024 kB');
+// From numeric value (bytes)
+$bytes = new Byte(1024);
 
-// Output the value in megabytes rounded to 2 decimal places
-echo $byte->toMb(2); // For example, might output "1 MB"
+// From string
+$bytes = new Byte('1024 kB');
 
-// Arithmetic operations:
-$byteIncremented = $byte->increment(1024); // Increase the value by 1024 bytes
-echo $byteIncremented->toString(); // output "2 MB"
+// Using static factory methods
+$bytes = Byte::new(1024);
+$bytes = Byte::kb(1024); // 1024 kilobytes
+$bytes = Byte::mb(50);   // 50 megabytes
+$bytes = Byte::gb(2);    // 2 gigabytes
 
-// Comparison:
-if ($byte->greaterThan(500)) {
-    echo "The value is greater than 500 bytes";
-}
+// From human-readable string
+$bytes = Byte::fromHumanReadable('2.5 GB');
+
+// From bits
+$bytes = Byte::fromBits(8192); // 1024 bytes
 ```
 
-## API
-
-# Constructor
+### Converting to Different Units
 
 ```php
-public function __construct(int|float|string $value)
+$bytes = new Byte(1536);
+
+// Convert to human-readable string
+echo $bytes->toString(); // "1.5 kB"
+
+// Convert to specific units
+echo $bytes->toKb();  // "1.5 kB"
+echo $bytes->toMb();  // "0.0015 MB"
+echo $bytes->toGb();  // "0.000001 GB"
+
+// Customize format
+echo $bytes->to('kb', 3, '_'); // "1.500_kB"
+
+// Get raw value in specific unit
+$kbValue = $bytes->getValue('kb'); // 1.5
 ```
-Creates a new Byte instance. The constructor accepts a number or a string representing the value and (optionally) its unit (e.g., "1024 kB").
 
-# String Conversion Methods
+### Comparison Operations
 
-to(string $units = 'b', ?int $precision = null, string $delim = ' '): string Converts the internal byte value into a formatted string in the specified unit. Parameters:
+The class supports both single-value and multi-value comparisons with two modes:
+- `MODE_ALL`: Returns true only if the condition is true for all values
+- `MODE_ANY`: Returns true if the condition is true for at least one value
 
-$units: The target unit for conversion (e.g., "b", "kb", "mb", etc.). The case is ignored.
+```php
+$bytes = Byte::kb(1024); // 1 MB
 
-$precision: (Optional) The number of decimal places for rounding. If null, no rounding is applied.
+// Compare with a single value
+$bytes->equalTo('1 MB');        // true
+$bytes->greaterThan('900 kB');  // true
+$bytes->lessThan('1.1 MB');     // true
 
-$delim: The delimiter to use between the numeric value and the unit.
+// Compare with multiple values
+$bytes->greaterThan(['900 kB', '1.1 MB'], Byte::MODE_ANY); // true
+$bytes->greaterThan(['900 kB', '1.1 MB'], Byte::MODE_ALL); // false
 
-toKb(?int $precision = null, string $delim = ' '): string A convenience method that returns the value formatted in kilobytes.
+// Other comparison methods
+$bytes->lessThanOrEqual('1 MB');                    // true
+$bytes->greaterThanOrEqual(['1 MB', '1024 kB']);    // true
+$bytes->between('900 kB', '1.1 MB');                // true
+$bytes->inRanges([['500 kB', '800 kB'], ['1 MB', '1.5 MB']]); // true
+```
 
-toMb(?int $precision = null, string $delim = ' '): string Converts the value to megabytes.
+### Arithmetic Operations
 
-toGb(?int $precision = null, string $delim = ' '): string Converts the value to gigabytes.
+```php
+$bytes = Byte::mb(1);
 
-toTb(?int $precision = null, string $delim = ' '): string Converts the value to terabytes.
+// Addition
+$newBytes = $bytes->increment('500 kB'); // 1.5 MB
 
-toPb(?int $precision = null, string $delim = ' '): string Converts the value to petabytes.
+// Subtraction
+$newBytes = $bytes->decrement('512 kB'); // ~0.5 MB
 
-toEb(?int $precision = null, string $delim = ' '): string Converts the value to exabytes.
+// Division
+$newBytes = $bytes->divide(2); // 512 KB
 
-toZb(?int $precision = null, string $delim = ' '): string Converts the value to zettabytes.
+// Multiplication
+$newBytes = $bytes->multiply(3); // 3 MB
 
-toYb(?int $precision = null, string $delim = ' '): string Converts the value to yottabytes.
+// Modulo
+$newBytes = $bytes->modulo('512 kB'); // 0
 
-# Arithmetic Operations
+// Absolute value
+$newBytes = (new Byte(-1024))->abs(); // 1024 bytes
 
-increment($value): Byte Returns a new Byte instance with its value incremented by the specified amount.
+// Min/Max
+$newBytes = $bytes->max('1.5 MB'); // 1.5 MB
+$newBytes = $bytes->min(['2 MB', '500 kB']); // 500 kB
+```
 
-decrement($value): Byte Returns a new Byte instance with its value decremented by the specified amount (the decrement value must not exceed the current value).
+### Static Operations on Collections
 
-multiply($value): Byte Returns a new Byte instance equal to the current value multiplied by the specified amount.
+```php
+// Create a range
+$range = Byte::range('1 MB', '5 MB', '1 MB'); // [1 MB, 2 MB, 3 MB, 4 MB, 5 MB]
 
-divide($value): Byte Returns a new Byte instance equal to the current value divided by the specified amount (ensuring that the divisor does not exceed the current value).
+// Calculate sum
+$sum = Byte::sum(['1 MB', '2 MB', '500 kB']); // 3.5 MB
 
-# Comparison
+// Calculate average
+$avg = Byte::average(['1 MB', '2 MB', '3 MB']); // 2 MB
 
-compare($operand): int Compares the current byte value with another value and returns one of the following:
+// Find maximum/minimum
+$max = Byte::maximum(['1 MB', '500 kB', '2 GB']); // 2 GB
+$min = Byte::minimum(['1 MB', '500 kB', '2 GB']); // 500 kB
+```
 
-Byte::COMPARE_LT if the current value is less.
+### Bit Conversion
 
-Byte::COMPARE_EQ if both values are equal.
+```php
+$bytes = new Byte(1024);
 
-Byte::COMPARE_GT if the current value is greater.
+// Convert to bits
+$bits = $bytes->toBits(); // 8192
 
-equalTo($operand): bool Checks if the current value is equal to the given operand.
+// Create from bits
+$bytes = Byte::fromBits(8192); // 1024 bytes
+```
 
-lessThan($operand): bool Evaluates whether the current value is less than the specified operand.
+### Transfer Time Calculation
 
-greaterThan($operand): bool Evaluates whether the current value is greater than the specified operand.
+```php
+$fileSize = Byte::gb(1);
+$bandwidth = Byte::mb(10); // 10 MB/s
 
-# String Representation
+// Calculate transfer time in seconds
+$seconds = $fileSize->getTransferTime($bandwidth); // 102.4 seconds
 
-__toString() and toString() Return a human-readable string representation of the Byte instance, using the most appropriate unit.
+// Get formatted transfer time
+$time = $fileSize->getFormattedTransferTime($bandwidth); // "1 minute, 42 seconds"
+```
 
-# Parsing Values
+### Humanizing Byte Values
 
-parse($value): int|float Converts a given string or numeric value into its numeric byte representation. The method expects the string to contain a numeric portion followed by a unit (e.g., "1024 kB"). Error: If the numeric portion is invalid or the unit is not recognized, the method throws an \InvalidArgumentException with one of the following messages:
+```php
+// Format byte values for human readability
+echo Byte::humanize(1536);             // "1.5 kB"
+echo Byte::humanize(1536, 3);          // "1.500 kB"
+echo Byte::humanize(1536, 2, '_');     // "1.5_kB" 
+```
 
-"Failed to parse string: The numeric portion is invalid." – if the numeric part is not valid.
+### State Checking
 
-"Failed to parse string: Unrecognized unit." – if the unit is not supported.
+```php
+$bytes = new Byte(1024);
+
+$bytes->isZero();      // false
+$bytes->isPositive();  // true
+$bytes->isNegative();  // false
+```
+
+## Error Handling
+
+The class throws exceptions in the following situations:
+
+- `\InvalidArgumentException`: When parsing invalid string formats or using unsupported units
+- `\LogicException`: When attempting to decrement by a value greater than the current value
+- `\DivisionByZeroError`: When attempting to divide by zero
+
+## License
+
+This package is open-sourced software licensed under the [MIT license](LICENSE.md).
