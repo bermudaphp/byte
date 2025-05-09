@@ -12,9 +12,13 @@ namespace Bermuda\Stdlib;
  */
 final class Byte implements \Stringable
 {
-    public const COMPARE_LT = -1;
-    public const COMPARE_EQ = 0;
-    public const COMPARE_GT = 1;
+    public const int COMPARE_LT = -1;
+    public const int COMPARE_EQ = 0;
+    public const int COMPARE_GT = 1;
+
+    // Define comparison modes
+    public const string MODE_ALL = 'all';
+    public const string MODE_ANY = 'any';
 
     /**
      * The value in bytes, stored as an integer or float.
@@ -86,7 +90,7 @@ final class Byte implements \Stringable
      */
     public static function kb(int $value): self
     {
-        return new self($value*pow(self::amount, self::units['KB']));
+        return new self($value*pow(self::amount, self::units['kB']));
     }
 
     /**
@@ -167,6 +171,27 @@ final class Byte implements \Stringable
     }
 
     /**
+     * Creates a Byte instance from a value in any supported unit
+     *
+     * @param int|float $value The numeric value
+     * @param string $unit The unit (B, kB, MB, etc.)
+     * @return static A new Byte instance
+     * @throws \InvalidArgumentException If the unit is not supported
+     */
+    public static function from(int|float $value, string $unit): self
+    {
+        $unit = strtoupper($unit);
+
+        foreach (self::units as $supportedUnit => $exponent) {
+            if (strcasecmp($unit, $supportedUnit) === 0) {
+                return new self($value * pow(self::amount, $exponent));
+            }
+        }
+
+        throw new \InvalidArgumentException("Unsupported unit: $unit");
+    }
+
+    /**
      * Converts the Byte instance to a human-readable string.
      *
      * This method calls the humanize() method to format the byte value using the most appropriate unit.
@@ -204,8 +229,10 @@ final class Byte implements \Stringable
     {
         foreach (self::units as $unit => $exponent) {
             if (strcasecmp($units, $unit) === 0) {
-                if ($precision) return round($this->value / pow(self::amount, $exponent), $precision)
-                    . "$delim$unit";
+                if ($precision !== null) {
+                    return round($this->value / pow(self::amount, $exponent), $precision)
+                        . "$delim$unit";
+                }
 
                 return $this->value / pow(self::amount, $exponent)
                     . "$delim$unit";
@@ -328,110 +355,402 @@ final class Byte implements \Stringable
     }
 
     /**
-     * Compares this Byte instance with another value.
+     * Returns the raw numeric value in a specific unit without formatting.
      *
-     * Returns:
-     * - self::COMPARE_LT if this instance is less than the operand.
-     * - self::COMPARE_EQ if both values are equal.
-     * - self::COMPARE_GT if this instance is greater than the operand.
+     * @param string $unit The target unit (e.g., 'kb', 'mb', 'gb')
+     * @param int|null $precision Optional precision for rounding
+     * @return float|int The numeric value in the specified unit
+     */
+    public function getValue(string $unit, ?int $precision = null): float|int
+    {
+        foreach (self::units as $unitKey => $exponent) {
+            if (strcasecmp($unit, $unitKey) === 0) {
+                $value = $this->value / pow(self::amount, $exponent);
+                return $precision !== null ? round($value, $precision) : $value;
+            }
+        }
+
+        throw new \InvalidArgumentException("Unsupported unit: $unit");
+    }
+
+    /**
+     * Compares this Byte instance with another value or array of values.
+     *
+     * When comparing with a single value:
+     * - Returns self::COMPARE_LT if this instance is less than the operand.
+     * - Returns self::COMPARE_EQ if both values are equal.
+     * - Returns self::COMPARE_GT if this instance is greater than the operand.
+     *
+     * When comparing with an array of values and mode is self::MODE_ALL:
+     * - Returns true only if the comparison is true for all values in the array.
+     *
+     * When comparing with an array of values and mode is self::MODE_ANY:
+     * - Returns true if the comparison is true for at least one value in the array.
+     *
+     * @param Byte|int|float|string|array $operand The value(s) to compare with.
+     * @param string $mode The comparison mode: 'all' or 'any'. Default is 'all'.
+     * @return int|bool Comparison result.
+     */
+    public function compare(Byte|int|float|string|array $operand, string $mode = self::MODE_ALL): int|bool
+    {
+        if (is_array($operand)) {
+            $results = [];
+            foreach ($operand as $item) {
+                $results[] = $this->compareSingle($item);
+            }
+
+            return match ($mode) {
+                self::MODE_ALL => count(array_unique($results)) === 1 ? $results[0] : false,
+                self::MODE_ANY => in_array(self::COMPARE_EQ, $results) ? self::COMPARE_EQ :
+                    (in_array(self::COMPARE_GT, $results) ? self::COMPARE_GT : self::COMPARE_LT),
+                default => throw new \InvalidArgumentException("Invalid mode: $mode"),
+            };
+        }
+
+        return $this->compareSingle($operand);
+    }
+
+    /**
+     * Compares this Byte instance with a single value.
      *
      * @param Byte|int|float|string $operand The value to compare with.
      * @return int One of the comparison constants.
      */
-    public function compare(self|int|float|string $operand): int
+    private function compareSingle(Byte|int|float|string $operand): int
     {
+        $operandValue = self::parse($operand);
+
         return match (true) {
-            ($operand = self::parse($operand)) == $this->value => self::COMPARE_EQ,
-            $this->value > $operand => self::COMPARE_GT,
+            $operandValue == $this->value => self::COMPARE_EQ,
+            $this->value > $operandValue => self::COMPARE_GT,
             default => self::COMPARE_LT
         };
+    }
+
+    /**
+     * Checks if the current Byte value is equal to a given operand or all/any operands in an array.
+     *
+     * @param Byte|int|float|string|array $operand The value(s) to compare with.
+     * @param string $mode The comparison mode: 'all' or 'any'. Default is 'all'.
+     * @return bool True if the values are equal according to the specified mode.
+     */
+    public function equalTo(Byte|int|float|string|array $operand, string $mode = self::MODE_ALL): bool
+    {
+        if (is_array($operand)) {
+            $results = [];
+            foreach ($operand as $item) {
+                $results[] = self::parse($item) == $this->value;
+            }
+
+            return match ($mode) {
+                self::MODE_ALL => !in_array(false, $results),
+                self::MODE_ANY => in_array(true, $results),
+                default => throw new \InvalidArgumentException("Invalid mode: $mode"),
+            };
+        }
+
+        return self::parse($operand) == $this->value;
+    }
+
+    /**
+     * Checks if the current Byte value is less than a given operand or all/any operands in an array.
+     *
+     * @param Byte|int|float|string|array $operand The value(s) to compare with.
+     * @param string $mode The comparison mode: 'all' or 'any'. Default is 'all'.
+     * @return bool True if current value is less than the operand(s) according to the specified mode.
+     */
+    public function lessThan(Byte|int|float|string|array $operand, string $mode = self::MODE_ALL): bool
+    {
+        if (is_array($operand)) {
+            $results = [];
+            foreach ($operand as $item) {
+                $results[] = self::parse($item) > $this->value;
+            }
+
+            return match ($mode) {
+                self::MODE_ALL => !in_array(false, $results),
+                self::MODE_ANY => in_array(true, $results),
+                default => throw new \InvalidArgumentException("Invalid mode: $mode"),
+            };
+        }
+
+        return self::parse($operand) > $this->value;
+    }
+
+    /**
+     * Checks if the current Byte value is greater than a given operand or all/any operands in an array.
+     *
+     * @param Byte|int|float|string|array $operand The value(s) to compare with.
+     * @param string $mode The comparison mode: 'all' or 'any'. Default is 'all'.
+     * @return bool True if current value is greater than the operand(s) according to the specified mode.
+     */
+    public function greaterThan(Byte|int|float|string|array $operand, string $mode = self::MODE_ALL): bool
+    {
+        if (is_array($operand)) {
+            $results = [];
+            foreach ($operand as $item) {
+                $results[] = $this->value > self::parse($item);
+            }
+
+            return match ($mode) {
+                self::MODE_ALL => !in_array(false, $results),
+                self::MODE_ANY => in_array(true, $results),
+                default => throw new \InvalidArgumentException("Invalid mode: $mode"),
+            };
+        }
+
+        return $this->value > self::parse($operand);
+    }
+
+    /**
+     * Checks if the current Byte value is less than or equal to a given operand or all/any operands in an array.
+     *
+     * @param Byte|int|float|string|array $operand The value(s) to compare with.
+     * @param string $mode The comparison mode: 'all' or 'any'. Default is 'all'.
+     * @return bool True if current value is less than or equal to the operand(s) according to the specified mode.
+     */
+    public function lessThanOrEqual(Byte|int|float|string|array $operand, string $mode = self::MODE_ALL): bool
+    {
+        if (is_array($operand)) {
+            $results = [];
+            foreach ($operand as $item) {
+                $results[] = self::parse($item) >= $this->value;
+            }
+
+            return match ($mode) {
+                self::MODE_ALL => !in_array(false, $results),
+                self::MODE_ANY => in_array(true, $results),
+                default => throw new \InvalidArgumentException("Invalid mode: $mode"),
+            };
+        }
+
+        return self::parse($operand) >= $this->value;
+    }
+
+    /**
+     * Checks if the current Byte value is greater than or equal to a given operand or all/any operands in an array.
+     *
+     * @param Byte|int|float|string|array $operand The value(s) to compare with.
+     * @param string $mode The comparison mode: 'all' or 'any'. Default is 'all'.
+     * @return bool True if current value is greater than or equal to the operand(s) according to the specified mode.
+     */
+    public function greaterThanOrEqual(Byte|int|float|string|array $operand, string $mode = self::MODE_ALL): bool
+    {
+        if (is_array($operand)) {
+            $results = [];
+            foreach ($operand as $item) {
+                $results[] = $this->value >= self::parse($item);
+            }
+
+            return match ($mode) {
+                self::MODE_ALL => !in_array(false, $results),
+                self::MODE_ANY => in_array(true, $results),
+                default => throw new \InvalidArgumentException("Invalid mode: $mode"),
+            };
+        }
+
+        return $this->value >= self::parse($operand);
+    }
+
+    /**
+     * Checks if the current Byte value is between two values (inclusive).
+     *
+     * @param Byte|int|float|string $min The minimum value.
+     * @param Byte|int|float|string $max The maximum value.
+     * @return bool True if the current value is between min and max (inclusive).
+     */
+    public function between(Byte|int|float|string $min, Byte|int|float|string $max): bool
+    {
+        $minValue = self::parse($min);
+        $maxValue = self::parse($max);
+
+        return $this->value >= $minValue && $this->value <= $maxValue;
     }
 
     /**
      * Increments the current Byte value by the given operand.
      *
      * @param Byte|int|float|string $value The value to add.
-     * @return $this A new Byte instance with the incremented value.
+     * @return static A new Byte instance with the incremented value.
      */
-    public function increment(self|int|float|string $value): self
+    public function increment(Byte|int|float|string $value): static
     {
-        return new self($this->value + self::parse($value));
+        return new static($this->value + self::parse($value));
     }
 
     /**
      * Decrements the current Byte value by the given operand.
      *
      * @param Byte|int|float|string $value The value to subtract.
-     * @return $this A new Byte instance with the decremented value.
+     * @return static A new Byte instance with the decremented value.
      * @throws \LogicException If the operand is greater than the current value.
      */
-    public function decrement(self|int|float|string $value): self
+    public function decrement(Byte|int|float|string $value): static
     {
-        if (($value = self::parse($value)) > $this->value) {
-            throw new \LogicException('[$value] can not be greater than '. $this->value);
+        $parsedValue = self::parse($value);
+        if ($parsedValue > $this->value) {
+            throw new \LogicException("Value to decrement ($parsedValue) cannot be greater than the current value ({$this->value})");
         }
 
-        return new self($this->value - $value);
-    }
-
-    /**
-     * Checks if the current Byte value is equal to the given operand.
-     *
-     * @param Byte|int|float|string $operand The value to compare with.
-     * @return bool True if the values are equal, false otherwise.
-     */
-    public function equalTo(self|int|float|string $operand): bool
-    {
-        return self::parse($operand) == $this->value;
+        return new static($this->value - $parsedValue);
     }
 
     /**
      * Divides the current Byte value by the given operand.
      *
      * @param Byte|int|float|string $value The value to divide by.
-     * @return self A new Byte instance with the divided value.
-     * @throws \LogicException If the operand is greater than the current value.
+     * @return static A new Byte instance with the divided value.
+     * @throws \DivisionByZeroError If the divisor is zero.
      */
-    public function divide(self|int|float|string $value): self
+    public function divide(Byte|int|float|string $value): static
     {
-        if (($value = self::parse($value)) > $this->value) {
-            throw new \LogicException('[$value] can not be greater than '. $this->value);
+        $parsedValue = self::parse($value);
+        if ($parsedValue == 0) {
+            throw new \DivisionByZeroError("Cannot divide by zero");
         }
 
-        return new self($this->value - $value);
+        return new static($this->value / $parsedValue);
     }
 
     /**
      * Multiplies the current Byte value by the given operand.
      *
-     * @param Byte|int|float|string $value The multiplier.
-     * @return self A new Byte instance with the multiplied value.
+     * @param int|float $value The multiplier.
+     * @return static A new Byte instance with the multiplied value.
      */
-    public function multiply(self|int|float|string $value): self
+    public function multiply(int|float $value): static
     {
-        return new self($this->value * $value);
+        return new static($this->value * $value);
     }
 
     /**
-     * Returns true if the current Byte value is less than the given operand.
+     * Takes the modulo of the current Byte value with the given operand.
      *
-     * @param Byte|int|float|string $operand The value to compare with.
-     * @return bool True if current value is less than the operand.
+     * @param Byte|int|float|string $value The value to take modulo with.
+     * @return static A new Byte instance with the modulo result.
+     * @throws \DivisionByZeroError If the divisor is zero.
      */
-    public function lessThan(self|int|float|string $operand): bool
+    public function modulo(Byte|int|float|string $value): static
     {
-        return self::parse($operand) > $this->value;
+        $parsedValue = self::parse($value);
+        if ($parsedValue == 0) {
+            throw new \DivisionByZeroError("Cannot take modulo with zero");
+        }
+
+        return new static($this->value % $parsedValue);
     }
 
     /**
-     * Returns true if the current Byte value is greater than the given operand.
+     * Determines if the current Byte value is zero.
      *
-     * @param int|float|string $operand The value to compare with.
-     * @return bool True if current value is greater than the operand.
+     * @return bool True if the value is zero, false otherwise.
      */
-    public function greaterThan(int|float|string $operand): bool
+    public function isZero(): bool
     {
-        return $this->value > self::parse($operand);
+        return $this->value === 0;
+    }
+
+    /**
+     * Determines if the current Byte value is positive.
+     *
+     * @return bool True if the value is positive, false otherwise.
+     */
+    public function isPositive(): bool
+    {
+        return $this->value > 0;
+    }
+
+    /**
+     * Determines if the current Byte value is negative.
+     *
+     * @return bool True if the value is negative, false otherwise.
+     */
+    public function isNegative(): bool
+    {
+        return $this->value < 0;
+    }
+
+    /**
+     * Returns the absolute value of the current Byte value.
+     *
+     * @return static A new Byte instance with the absolute value.
+     */
+    public function abs(): static
+    {
+        return new static(abs($this->value));
+    }
+
+    /**
+     * Finds the maximum of the current Byte value and the given operands.
+     *
+     * @param Byte|int|float|string|array $values The value(s) to compare with.
+     * @return static A new Byte instance with the maximum value.
+     */
+    public function max(Byte|int|float|string|array $values): static
+    {
+        $maxValue = $this->value;
+
+        if (!is_array($values)) {
+            $values = [$values];
+        }
+
+        foreach ($values as $value) {
+            $parsedValue = self::parse($value);
+            $maxValue = max($maxValue, $parsedValue);
+        }
+
+        return new static($maxValue);
+    }
+
+    /**
+     * Finds the minimum of the current Byte value and the given operands.
+     *
+     * @param Byte|int|float|string|array $values The value(s) to compare with.
+     * @return static A new Byte instance with the minimum value.
+     */
+    public function min(Byte|int|float|string|array $values): static
+    {
+        $minValue = $this->value;
+
+        if (!is_array($values)) {
+            $values = [$values];
+        }
+
+        foreach ($values as $value) {
+            $parsedValue = self::parse($value);
+            $minValue = min($minValue, $parsedValue);
+        }
+
+        return new static($minValue);
+    }
+
+    /**
+     * Checks if the current Byte value is within a range of values.
+     *
+     * @param array $ranges Array of ranges, each a two-element array [min, max]
+     * @param string $mode The comparison mode: 'all' or 'any'. Default is 'any'.
+     * @return bool True if the current value is within the specified ranges according to the mode.
+     */
+    public function inRanges(array $ranges, string $mode = self::MODE_ANY): bool
+    {
+        $results = [];
+
+        foreach ($ranges as $range) {
+            if (!is_array($range) || count($range) !== 2) {
+                throw new \InvalidArgumentException("Each range must be an array with exactly two elements [min, max]");
+            }
+
+            $min = self::parse($range[0]);
+            $max = self::parse($range[1]);
+
+            $results[] = $this->value >= $min && $this->value <= $max;
+        }
+
+        return match ($mode) {
+            self::MODE_ALL => !in_array(false, $results),
+            self::MODE_ANY => in_array(true, $results),
+            default => throw new \InvalidArgumentException("Invalid mode: $mode"),
+        };
     }
 
     /**
@@ -451,6 +770,9 @@ final class Byte implements \Stringable
             if ($precision) $result = round($result, $precision);
             return "$result$delim$unit";
         }
+
+        // If all conversions result in < 1, return bytes
+        return "$bytes{$delim}B";
     }
 
     /**
@@ -466,13 +788,8 @@ final class Byte implements \Stringable
      * @return int|float The parsed numeric byte value.
      *
      * @throws \InvalidArgumentException If the input is a string that does not contain a valid numeric part or if the provided unit is not recognized.
-     *
-     * Error Description:
-     * The method expects a string in the format "[number][space][unit]" (for example, "1024 kB") or a similar valid variation.
-     * If the numeric part is not valid or the unit is not found within the supported units, the method throws an InvalidArgumentException
-     * with the message "Failed to parse string". This error indicates that the input value does not conform to an expected byte format.
      */
-    public static function parse(self|string $value): int|float
+    public static function parse(self|int|float|string $value): int|float
     {
         // If the value is numeric, simply return it as an integer or float.
         if (is_numeric($value)) return $value + 0;
@@ -480,19 +797,241 @@ final class Byte implements \Stringable
         // If the value is already a Byte instance, use its stored byte value.
         if ($value instanceof self) return $value->value;
 
-        // Assume the string format ends with a two-character unit (e.g., "MB", "GB").
-        $bytes = trim(substr($value, 0, -2));
-        $units = trim(substr($value, -2, 2));
+        // Trim the input string to handle extra whitespace
+        $value = trim($value);
 
-        // If the numeric part is not valid, or if the unit is not recognized, throw an exception.
-        if (!is_numeric($bytes)) {
-            throw new \InvalidArgumentException('Failed to parse string: The numeric portion is invalid.');
+        // Match pattern: number followed by optional whitespace followed by unit
+        if (!preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]{1,2})$/', $value, $matches)) {
+            throw new \InvalidArgumentException('Failed to parse string: The format is invalid.');
         }
+
+        $bytes = $matches[1];
+        $units = $matches[2];
 
         foreach (self::units as $unit => $exponent) {
-            if (strcasecmp($unit, $units) === 0) return $bytes * pow(self::amount, $exponent);
+            if (strcasecmp($unit, $units) === 0) {
+                return $bytes * pow(self::amount, $exponent);
+            }
         }
 
-        throw new \InvalidArgumentException('Failed to parse string: Unrecognized unit.');
+        throw new \InvalidArgumentException("Failed to parse string: Unrecognized unit '{$units}'.");
+    }
+
+    /**
+     * Creates an array of Byte instances within a specified range.
+     *
+     * @param Byte|int|float|string $start The starting value of the range.
+     * @param Byte|int|float|string $end The ending value of the range.
+     * @param Byte|int|float|string $step The step value for increments. Default is 1B.
+     * @return array An array of Byte instances.
+     * @throws \InvalidArgumentException If end < start or step <= 0.
+     */
+    public static function range(Byte|int|float|string $start, Byte|int|float|string $end, Byte|int|float|string $step = 1): array
+    {
+        $startValue = self::parse($start);
+        $endValue = self::parse($end);
+        $stepValue = self::parse($step);
+
+        if ($endValue < $startValue) {
+            throw new \InvalidArgumentException("End value cannot be less than start value");
+        }
+
+        if ($stepValue <= 0) {
+            throw new \InvalidArgumentException("Step value must be greater than zero");
+        }
+
+        $result = [];
+        $current = $startValue;
+
+        while ($current <= $endValue) {
+            $result[] = new self($current);
+            $current += $stepValue;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Creates a Byte object from a human-readable size string.
+     *
+     * @param string $sizeString A string like "5 MB", "1.5GB", etc.
+     * @return static A new Byte instance.
+     * @throws \InvalidArgumentException If the string format is invalid.
+     */
+    public static function fromHumanReadable(string $sizeString): static
+    {
+        return new static($sizeString);
+    }
+
+    /**
+     * Sums an array of byte values.
+     *
+     * @param array $bytes Array of Byte|int|float|string values.
+     * @return static A new Byte instance with the sum.
+     */
+    public static function sum(array $bytes): static
+    {
+        $total = 0;
+
+        foreach ($bytes as $byte) {
+            $total += self::parse($byte);
+        }
+
+        return new static($total);
+    }
+
+    /**
+     * Finds the average of an array of byte values.
+     *
+     * @param array $bytes Array of Byte|int|float|string values.
+     * @return static A new Byte instance with the average.
+     * @throws \InvalidArgumentException If the array is empty.
+     */
+    public static function average(array $bytes): static
+    {
+        if (empty($bytes)) {
+            throw new \InvalidArgumentException("Cannot compute average of an empty array");
+        }
+
+        return self::sum($bytes)->divide(count($bytes));
+    }
+
+    /**
+     * Finds the maximum value in an array of byte values.
+     *
+     * @param array $bytes Array of Byte|int|float|string values.
+     * @return static A new Byte instance with the maximum value.
+     * @throws \InvalidArgumentException If the array is empty.
+     */
+    public static function maximum(array $bytes): static
+    {
+        if (empty($bytes)) {
+            throw new \InvalidArgumentException("Cannot find maximum of an empty array");
+        }
+
+        $max = self::parse($bytes[0]);
+
+        foreach ($bytes as $byte) {
+            $value = self::parse($byte);
+            if ($value > $max) {
+                $max = $value;
+            }
+        }
+
+        return new static($max);
+    }
+
+    /**
+     * Finds the minimum value in an array of byte values.
+     *
+     * @param array $bytes Array of Byte|int|float|string values.
+     * @return static A new Byte instance with the minimum value.
+     * @throws \InvalidArgumentException If the array is empty.
+     */
+    public static function minimum(array $bytes): static
+    {
+        if (empty($bytes)) {
+            throw new \InvalidArgumentException("Cannot find minimum of an empty array");
+        }
+
+        $min = self::parse($bytes[0]);
+
+        foreach ($bytes as $byte) {
+            $value = self::parse($byte);
+            if ($value < $min) {
+                $min = $value;
+            }
+        }
+
+        return new static($min);
+    }
+
+    /**
+     * Converts bytes to bits.
+     *
+     * @return float The value in bits.
+     */
+    public function toBits(): float
+    {
+        return $this->value * 8;
+    }
+
+    /**
+     * Creates a Byte instance from a bit value.
+     *
+     * @param int|float $bits The number of bits.
+     * @return static A new Byte instance.
+     */
+    public static function fromBits(int|float $bits): static
+    {
+        return new static($bits / 8);
+    }
+
+    /**
+     * Calculates the transfer time in seconds based on a bandwidth.
+     *
+     * @param Byte|int|float|string $bandwidthPerSecond The bandwidth in bytes per second.
+     * @return float The time in seconds.
+     * @throws \InvalidArgumentException If bandwidth is zero or negative.
+     */
+    public function getTransferTime(Byte|int|float|string $bandwidthPerSecond): float
+    {
+        $bandwidth = self::parse($bandwidthPerSecond);
+
+        if ($bandwidth <= 0) {
+            throw new \InvalidArgumentException("Bandwidth must be positive");
+        }
+
+        return $this->value / $bandwidth;
+    }
+
+    /**
+     * Formats the transfer time into a human-readable string.
+     *
+     * @param Byte|int|float|string $bandwidthPerSecond The bandwidth in bytes per second.
+     * @return string A formatted string like "5 minutes, 30 seconds".
+     */
+    public function getFormattedTransferTime(Byte|int|float|string $bandwidthPerSecond): string
+    {
+        $seconds = $this->getTransferTime($bandwidthPerSecond);
+
+        if ($seconds < 1) {
+            return "less than a second";
+        }
+
+        $minutes = floor($seconds / 60);
+        $remainingSeconds = $seconds % 60;
+
+        if ($minutes < 1) {
+            return round($remainingSeconds) . " second" . ($remainingSeconds == 1 ? "" : "s");
+        }
+
+        $hours = floor($minutes / 60);
+        $remainingMinutes = $minutes % 60;
+
+        if ($hours < 1) {
+            $result = $remainingMinutes . " minute" . ($remainingMinutes == 1 ? "" : "s");
+            if ($remainingSeconds > 0) {
+                $result .= ", " . round($remainingSeconds) . " second" . ($remainingSeconds == 1 ? "" : "s");
+            }
+            return $result;
+        }
+
+        $days = floor($hours / 24);
+        $remainingHours = $hours % 24;
+
+        if ($days < 1) {
+            $result = $remainingHours . " hour" . ($remainingHours == 1 ? "" : "s");
+            if ($remainingMinutes > 0) {
+                $result .= ", " . $remainingMinutes . " minute" . ($remainingMinutes == 1 ? "" : "s");
+            }
+            return $result;
+        }
+
+        $result = $days . " day" . ($days == 1 ? "" : "s");
+        if ($remainingHours > 0) {
+            $result .= ", " . $remainingHours . " hour" . ($remainingHours == 1 ? "" : "s");
+        }
+        return $result;
     }
 }
