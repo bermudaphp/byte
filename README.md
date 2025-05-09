@@ -1,6 +1,7 @@
 # Byte and BitRate Classes
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.4-blue.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bermudaphp/byte)
 
 *Read this in other languages: [Russian](README.ru.md)*
 
